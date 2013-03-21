@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
-import static org.apache.commons.codec.binary.Base64.encodeBase64String;
+import static org.apache.commons.codec.binary.Base64.encodeBase64;
 
 /**
  * Raven client for Java, allowing sending of messages to Sentry.
@@ -480,7 +480,7 @@ public class Client {
             if (compress) {
                 raw = Utils.compress(raw);
             }
-            return encodeBase64String(raw);
+            return new String(encodeBase64(raw));
         }
 
         @Override
