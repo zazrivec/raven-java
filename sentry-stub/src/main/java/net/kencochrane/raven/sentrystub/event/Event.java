@@ -37,6 +37,6 @@ public class Event {
     private MessageInterface messageInterface;
     @JsonProperty(value = "sentry.interfaces.Exception")
     private ExceptionInterface exceptionInterface;
-    @JsonProperty(value = "sentry.interfaces.StackTrace")
+    @JsonProperty(value = "sentry.interfaces.Stacktrace")
     private StackTraceInterface stackTraceInterface;
 }
