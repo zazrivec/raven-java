@@ -33,13 +33,13 @@ public class Dsn {
      */
     public static final String ASYNC_OPTION = "raven.async";
     /**
-     * Option to set the charset for strings sent to sentry.
-     */
-    public static final String CHARSET_OPTION = "raven.charset";
-    /**
      * Protocol setting to disable security checks over an SSL connection.
      */
     public static final String NAIVE_PROTOCOL = "naive";
+    /**
+     * Lookup name for the DSN in JNDI.
+     */
+    private static final String JNDI_DSN_NAME = "java:comp/env/sentry/dsn";
     private static final Logger logger = Logger.getLogger(Raven.class.getCanonicalName());
     private String secretKey;
     private String publicKey;
@@ -101,7 +101,7 @@ public class Dsn {
         // Try to obtain the DSN from JNDI
         try {
             Context c = new InitialContext();
-            dsn = (String) c.lookup("java:comp/env/sentry/dsn");
+            dsn = (String) c.lookup(JNDI_DSN_NAME);
         } catch (NoInitialContextException e) {
             logger.log(Level.INFO, "JNDI not configured for sentry (NoInitialContextEx)");
         } catch (NamingException e) {
