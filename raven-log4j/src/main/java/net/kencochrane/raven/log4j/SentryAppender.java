@@ -16,11 +16,12 @@ import java.util.Set;
 
 public class SentryAppender extends AppenderSkeleton {
     private static final String LOG4J_NDC = "Log4J-NDC";
-    private final Raven raven;
     private final boolean propagateClose;
+    private Raven raven;
+    private String dsn;
 
     public SentryAppender() {
-        this(new Raven(), true);
+        this.propagateClose = true;
     }
 
     public SentryAppender(Raven raven) {
@@ -47,24 +48,30 @@ public class SentryAppender extends AppenderSkeleton {
     }
 
     @Override
+    public void activateOptions() {
+        if (raven == null)
+            raven = (dsn != null) ? new Raven(dsn) : new Raven();
+    }
+
+    @Override
     protected void append(LoggingEvent loggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
                 .setTimestamp(new Date(loggingEvent.getTimeStamp()))
                 .setMessage(loggingEvent.getRenderedMessage())
                 .setLogger(loggingEvent.getLoggerName())
                 .setLevel(formatLevel(loggingEvent.getLevel()))
-                .setCulprit(loggingEvent.getFQNOfLoggerClass());
+                .setCulprit(loggingEvent.getLoggerName());
 
         if (loggingEvent.getThrowableInformation() != null) {
             Throwable throwable = loggingEvent.getThrowableInformation().getThrowable();
             eventBuilder.addSentryInterface(new ExceptionInterface(throwable))
                     .addSentryInterface(new StackTraceInterface(throwable));
             eventBuilder.setCulprit(throwable);
-        } else {
+        } else if (loggingEvent.getLocationInformation().fullInfo != null) {
             // When it's a message try to rely on the position of the log (the same message can be logged from
-            // different places, or a same place can log a message in different ways.
-            if (loggingEvent.getLocationInformation().fullInfo != null)
-                eventBuilder.generateChecksum(loggingEvent.getLocationInformation().fullInfo);
+            // different places, or a same place can log a message in different ways).
+            eventBuilder.generateChecksum(loggingEvent.getLocationInformation().fullInfo);
+            eventBuilder.setCulprit(loggingEvent.getLocationInformation().fullInfo);
         }
 
         if (loggingEvent.getNDC() != null)
@@ -76,6 +83,10 @@ public class SentryAppender extends AppenderSkeleton {
         raven.runBuilderHelpers(eventBuilder);
 
         raven.sendEvent(eventBuilder.build());
+    }
+
+    public void setDsn(String dsn) {
+        this.dsn = dsn;
     }
 
     @Override
