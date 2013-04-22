@@ -1,6 +1,5 @@
 package net.kencochrane.raven.sentrystub;
 
-import net.kencochrane.raven.sentrystub.auth.AuthValidator;
 import net.kencochrane.raven.sentrystub.auth.InvalidAuthException;
 
 import javax.servlet.*;
@@ -16,12 +15,10 @@ import java.util.Map;
 @WebFilter(servletNames = "SentryHttpServlet")
 public class SentryAuthenticationFilter implements Filter {
     private static final String SENTRY_AUTH = "X-Sentry-Auth";
-    private AuthValidator authValidator;
+    private final SentryStub sentryStub = SentryStub.getInstance();
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        authValidator = new AuthValidator();
-        authValidator.loadSentryUsers(filterConfig.getServletContext().getInitParameter("sentry_config"));
     }
 
     @Override
@@ -29,10 +26,8 @@ public class SentryAuthenticationFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
 
-        //TODO: respond to everything that isn't "https://example.com/sentry/api/project-id/store/"
-        String pathInfo = req.getPathInfo();
-
-        if (!validateAuth(req, resp)) return;
+        if (!validateAuth(req, resp))
+            return;
 
         chain.doFilter(request, response);
     }
@@ -43,7 +38,7 @@ public class SentryAuthenticationFilter implements Filter {
         String projectId = req.getPathInfo().substring(1, req.getPathInfo().indexOf('/', 1));
 
         try {
-            authValidator.validateSentryAuth(sentryAuthDetails, projectId);
+            sentryStub.validateAuth(sentryAuthDetails, projectId);
         } catch (InvalidAuthException iae) {
             resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
             PrintWriter writer = resp.getWriter();
