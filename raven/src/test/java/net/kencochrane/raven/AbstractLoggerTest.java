@@ -80,14 +80,14 @@ public abstract class AbstractLoggerTest {
 
         Throwable capturedException = ((ExceptionInterface) exceptionInterface).getThrowable();
         assertThat(capturedException.getMessage(), is(exception.getMessage()));
-        assertThat(capturedException.getStackTrace(), is(capturedException.getStackTrace()));
+        assertThat(capturedException.getStackTrace(), is(exception.getStackTrace()));
 
         SentryInterface stackTraceInterface = event.getSentryInterfaces().get(StackTraceInterface.STACKTRACE_INTERFACE);
         assertThat(stackTraceInterface, instanceOf(StackTraceInterface.class));
 
         Throwable stackTraceException = ((StackTraceInterface) stackTraceInterface).getThrowable();
         assertThat(stackTraceException.getMessage(), is(exception.getMessage()));
-        assertThat(stackTraceException.getStackTrace(), is(capturedException.getStackTrace()));
+        assertThat(stackTraceException.getStackTrace(), is(exception.getStackTrace()));
     }
 
     @Test
