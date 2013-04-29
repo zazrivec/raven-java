@@ -53,8 +53,11 @@ public class TestStackTraceInterfaceBinding extends AbstractTestInterfaceBinding
     @Test
     public void testFramesCommonWithEnclosing() throws Exception {
         StackTraceElement stackTraceElement = new StackTraceElement("", "", null, 0);
-        when(mockStackTraceInterface.getStackTrace()).thenReturn(new StackTraceElement[]{stackTraceElement, stackTraceElement});
-        when(mockStackTraceInterface.getFramesCommonWithEnclosing()).thenReturn(1);
+        Exception exception = new Exception();
+        exception.setStackTrace(new StackTraceElement[]{stackTraceElement, stackTraceElement});
+        Exception exception2 = new Exception(exception);
+        exception2.setStackTrace(new StackTraceElement[]{new StackTraceElement("", "", null, 1), stackTraceElement});
+        when(mockStackTraceInterface.getThrowable()).thenReturn(new ImmutableThrowable(exception2));
 
         JsonGenerator jSonGenerator = getJsonGenerator();
         interfaceBinding.setRemoveCommonFramesWithEnclosing(true);
@@ -62,16 +65,19 @@ public class TestStackTraceInterfaceBinding extends AbstractTestInterfaceBinding
         jSonGenerator.close();
 
         JsonNode frames = getMapper().readValue(getJsonParser(), JsonNode.class).get("frames");
-        assertThat(frames.size(), is(2));
-        assertThat(frames.get(0).get("in_app").asBoolean(), is(false));
-        assertThat(frames.get(1).get("in_app").asBoolean(), is(true));
+        assertThat(frames.size(), is(5));
+        assertThat(frames.get(3).get("in_app").asBoolean(), is(false));
+        assertThat(frames.get(4).get("in_app").asBoolean(), is(true));
     }
 
     @Test
     public void testFramesCommonWithEnclosingDisabled() throws Exception {
         StackTraceElement stackTraceElement = new StackTraceElement("", "", null, 0);
-        when(mockStackTraceInterface.getStackTrace()).thenReturn(new StackTraceElement[]{stackTraceElement, stackTraceElement});
-        when(mockStackTraceInterface.getFramesCommonWithEnclosing()).thenReturn(1);
+        Exception exception = new Exception();
+        exception.setStackTrace(new StackTraceElement[]{stackTraceElement, stackTraceElement});
+        Exception exception2 = new Exception(exception);
+        exception2.setStackTrace(new StackTraceElement[]{new StackTraceElement("", "", null, 1), stackTraceElement});
+        when(mockStackTraceInterface.getThrowable()).thenReturn(new ImmutableThrowable(exception2));
 
         JsonGenerator jSonGenerator = getJsonGenerator();
         interfaceBinding.setRemoveCommonFramesWithEnclosing(false);
@@ -79,8 +85,8 @@ public class TestStackTraceInterfaceBinding extends AbstractTestInterfaceBinding
         jSonGenerator.close();
 
         JsonNode frames = getMapper().readValue(getJsonParser(), JsonNode.class).get("frames");
-        assertThat(frames.size(), is(2));
-        assertThat(frames.get(0).get("in_app").asBoolean(), is(true));
-        assertThat(frames.get(1).get("in_app").asBoolean(), is(true));
+        assertThat(frames.size(), is(5));
+        assertThat(frames.get(3).get("in_app").asBoolean(), is(true));
+        assertThat(frames.get(4).get("in_app").asBoolean(), is(true));
     }
 }
