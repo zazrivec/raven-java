@@ -78,17 +78,16 @@ public abstract class AbstractLoggerTest {
         SentryInterface exceptionInterface = event.getSentryInterfaces().get(ExceptionInterface.EXCEPTION_INTERFACE);
         assertThat(exceptionInterface, instanceOf(ExceptionInterface.class));
 
-        // The object isn't exactly the same, but equals delegates to the actual exception in ImmutableThrowable.
-        // This is _BAD_ and shouldn't be done, but it's the best way to do it in this particular case.
-        assertThat(((ExceptionInterface) exceptionInterface).getThrowable(), Matchers.<Object>equalTo(exception));
-
+        Throwable capturedException = ((ExceptionInterface) exceptionInterface).getThrowable();
+        assertThat(capturedException.getMessage(), is(exception.getMessage()));
+        assertThat(capturedException.getStackTrace(), is(capturedException.getStackTrace()));
 
         SentryInterface stackTraceInterface = event.getSentryInterfaces().get(StackTraceInterface.STACKTRACE_INTERFACE);
         assertThat(stackTraceInterface, instanceOf(StackTraceInterface.class));
 
-        // The object isn't exactly the same, but equals delegates to the actual exception in ImmutableThrowable.
-        // This is _BAD_ and shouldn't be done, but it's the best way to do it in this particular case.
-        assertThat(((StackTraceInterface) stackTraceInterface).getThrowable(), Matchers.<Object>equalTo(exception));
+        Throwable stackTraceException = ((StackTraceInterface) stackTraceInterface).getThrowable();
+        assertThat(stackTraceException.getMessage(), is(exception.getMessage()));
+        assertThat(stackTraceException.getStackTrace(), is(capturedException.getStackTrace()));
     }
 
     @Test
