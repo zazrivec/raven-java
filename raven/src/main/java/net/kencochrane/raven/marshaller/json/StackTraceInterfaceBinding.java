@@ -9,8 +9,10 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.logging.Logger;
 
 public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceInterface> {
+    private static final Logger logger = Logger.getLogger(StackTraceInterfaceBinding.class.getCanonicalName());
     private static final String FRAMES_PARAMETER = "frames";
     private static final String FILENAME_PARAMETER = "filename";
     private static final String FUNCTION_PARAMETER = "function";
@@ -84,13 +86,20 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
 
     @Override
     public void writeInterface(JsonGenerator generator, StackTraceInterface stackTraceInterface) throws IOException {
+        Set<ImmutableThrowable> dejaVu = new HashSet<ImmutableThrowable>();
+
         ImmutableThrowable currentThrowable = stackTraceInterface.getThrowable();
         Deque<ImmutableThrowable> throwableStack = new LinkedList<ImmutableThrowable>();
 
         //Inverse the chain of exceptions to get the first exception thrown first.
         while (currentThrowable != null) {
+            dejaVu.add(currentThrowable);
             throwableStack.push(currentThrowable);
             currentThrowable = currentThrowable.getCause();
+            if (dejaVu.contains(currentThrowable)) {
+                logger.warning("Exiting a circular referencing exception!");
+                break;
+            }
         }
 
         generator.writeStartObject();
