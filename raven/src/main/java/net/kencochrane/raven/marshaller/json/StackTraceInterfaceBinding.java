@@ -5,10 +5,7 @@ import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 
 import java.io.IOException;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 
 public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceInterface> {
@@ -24,24 +21,8 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     private static final String POST_CONTEXT_PARAMETER = "post_context";
     private static final String IN_APP_PARAMETER = "in_app";
     private static final String VARIABLES_PARAMETER = "vars";
-    private final Set<String> notInAppFrames;
+    private Set<String> notInAppFrames = Collections.emptySet();
     private boolean removeCommonFramesWithEnclosing = true;
-
-    public StackTraceInterfaceBinding() {
-        notInAppFrames = new HashSet<String>();
-        notInAppFrames.add("com.sun.");
-        notInAppFrames.add("java.");
-        notInAppFrames.add("javax.");
-        notInAppFrames.add("org.omg.");
-        notInAppFrames.add("sun.");
-        notInAppFrames.add("junit.");
-        notInAppFrames.add("com.intellij.rt.");
-    }
-
-    public StackTraceInterfaceBinding(Set<String> notInAppFrames) {
-        // Makes a copy to avoid an external modification.
-        this.notInAppFrames = new HashSet<String>(notInAppFrames);
-    }
 
     /**
      * Writes a fake frame to allow chained exceptions.
@@ -78,7 +59,7 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
     }
 
     private boolean isFrameInApp(StackTraceElement stackTraceElement) {
-        //TODO: A set is absolutely not performant here, a Trie could be a better solution.
+        //TODO: A set is absolutely not efficient here, a Trie could be a better solution.
         for (String notInAppFrame : notInAppFrames) {
             if (stackTraceElement.getClassName().startsWith(notInAppFrame)) {
                 return false;
@@ -140,5 +121,9 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
 
     public void setRemoveCommonFramesWithEnclosing(boolean removeCommonFramesWithEnclosing) {
         this.removeCommonFramesWithEnclosing = removeCommonFramesWithEnclosing;
+    }
+
+    public void setNotInAppFrames(Set<String> notInAppFrames) {
+        this.notInAppFrames = notInAppFrames;
     }
 }

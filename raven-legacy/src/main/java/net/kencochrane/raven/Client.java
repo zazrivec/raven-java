@@ -111,7 +111,7 @@ public class Client {
      */
     @Deprecated
     public Client(SentryDsn dsn) {
-        raven = new Raven(dsn.toString(true));
+        raven = RavenFactory.ravenInstance(new Dsn(dsn.toString(true)));
     }
 
     /**
@@ -126,7 +126,7 @@ public class Client {
      */
     @Deprecated
     public Client(SentryDsn dsn, boolean autoStart) {
-        raven = new Raven(dsn.toString(true));
+        this(dsn);
     }
 
     /**

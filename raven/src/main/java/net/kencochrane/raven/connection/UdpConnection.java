@@ -1,6 +1,5 @@
 package net.kencochrane.raven.connection;
 
-import net.kencochrane.raven.Dsn;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.exception.ConnectionException;
 import net.kencochrane.raven.marshaller.Marshaller;
@@ -18,14 +17,9 @@ import java.net.SocketException;
  * Connection to a Sentry server through an UDP connection.
  */
 public class UdpConnection extends AbstractConnection {
-    private static final int DEFAULT_UDP_PORT = 9001;
+    public static final int DEFAULT_UDP_PORT = 9001;
     private DatagramSocket socket;
     private Marshaller marshaller = new JsonMarshaller();
-
-    public UdpConnection(Dsn dsn) {
-        super(dsn);
-        openSocket(dsn.getHost(), dsn.getPort() != -1 ? dsn.getPort() : DEFAULT_UDP_PORT);
-    }
 
     public UdpConnection(String hostname, String publicKey, String secretKey) {
         this(hostname, DEFAULT_UDP_PORT, publicKey, secretKey);

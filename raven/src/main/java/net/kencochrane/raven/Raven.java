@@ -1,13 +1,9 @@
 package net.kencochrane.raven;
 
-import net.kencochrane.raven.connection.AsyncConnection;
 import net.kencochrane.raven.connection.Connection;
-import net.kencochrane.raven.connection.HttpConnection;
-import net.kencochrane.raven.connection.UdpConnection;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.helper.EventBuilderHelper;
-import net.kencochrane.raven.marshaller.json.JsonMarshaller;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -18,8 +14,8 @@ import java.util.logging.Logger;
 /**
  * Raven is a client for Sentry allowing to send an {@link Event} that will be processed and sent to a Sentry server.
  * <p>
- * A default client will use the protocol defined in the DSN and will send the content in the JSON format
- * (optionally compressed and encoded in base64).
+ * It is recommended to create an instance of Raven through {@link RavenFactory#createRavenInstance(Dsn)}, this
+ * will use the best factory available to create a sensible instance of Raven.
  * </p>
  */
 public class Raven {
@@ -31,79 +27,6 @@ public class Raven {
     private static final Logger logger = Logger.getLogger(Raven.class.getCanonicalName());
     private final Set<EventBuilderHelper> builderHelpers = new HashSet<EventBuilderHelper>();
     private Connection connection;
-
-    /**
-     * Builds a default Raven client, trying to figure out which {@link Dsn} can be used.
-     *
-     * @see net.kencochrane.raven.Dsn#dsnLookup()
-     */
-    public Raven() {
-        this(new Dsn());
-    }
-
-    /**
-     * Builds a default Raven client using the given DSN.
-     *
-     * @param dsn Data Source Name as a String to use to connect to sentry.
-     */
-    public Raven(String dsn) {
-        this(new Dsn(dsn));
-    }
-
-    /**
-     * Builds a default Raven client using the given DSN.
-     *
-     * @param dsn Data Source Name as a String to use to connect to sentry.
-     */
-    public Raven(Dsn dsn) {
-        this(determineConnection(dsn));
-    }
-
-    /**
-     * Builds a Raven client using the given connection.
-     *
-     * @param connection connection to sentry.
-     */
-    public Raven(Connection connection) {
-        this.connection = connection;
-    }
-
-    /**
-     * Builds a {@link Connection} based on a {@link Dsn}.
-     * <p>
-     * Currently supports the protocols HTTP(s) with {@link HttpConnection} and UPD with {@link UdpConnection}.
-     * </p>
-     *
-     * @param dsn Data Source Name from which the connection will be generated.
-     * @return a {@link Connection} allowing to send events to a Sentry server or {@code null} if nothing was found.
-     */
-    //TODO: Replace with a factory?
-    private static Connection determineConnection(Dsn dsn) {
-        String protocol = dsn.getProtocol();
-        Connection connection = null;
-        JsonMarshaller marshaller = new JsonMarshaller();
-        marshaller.setCompression(!dsn.getOptions().containsKey(Dsn.NOCOMPRESSION_OPTION));
-
-        if (protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("https")) {
-            logger.log(Level.INFO, "Using an HTTP connection to Sentry.");
-            HttpConnection httpConnection = new HttpConnection(dsn);
-            httpConnection.setMarshaller(marshaller);
-            connection = httpConnection;
-        } else if (protocol.equalsIgnoreCase("udp")) {
-            logger.log(Level.INFO, "Using an UDP connection to Sentry.");
-            UdpConnection udpConnection = new UdpConnection(dsn);
-            udpConnection.setMarshaller(marshaller);
-            connection = udpConnection;
-        } else {
-            logger.log(Level.WARNING,
-                    "Couldn't figure out automatically a connection to Sentry, one should be set manually");
-        }
-
-        if (dsn.getOptions().containsKey(Dsn.ASYNC_OPTION))
-            connection = new AsyncConnection(connection, dsn);
-
-        return connection;
-    }
 
     /**
      * Runs the {@link EventBuilderHelper} against the {@link EventBuilder} to obtain additional information with a
@@ -150,15 +73,15 @@ public class Raven {
         builderHelpers.add(builderHelper);
     }
 
+    public Set<EventBuilderHelper> getBuilderHelpers() {
+        return Collections.unmodifiableSet(builderHelpers);
+    }
+
     public Connection getConnection() {
         return connection;
     }
 
     public void setConnection(Connection connection) {
         this.connection = connection;
-    }
-
-    public Set<EventBuilderHelper> getBuilderHelpers() {
-        return Collections.unmodifiableSet(builderHelpers);
     }
 }

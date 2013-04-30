@@ -6,8 +6,10 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.NoInitialContextException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,22 +22,6 @@ public class Dsn {
      * Name of the environment or system variable containing the DSN.
      */
     public static final String DSN_VARIABLE = "SENTRY_DSN";
-    /**
-     * Option specific to raven-java, allowing to disable the compression of requests to the Sentry Server.
-     */
-    public static final String NOCOMPRESSION_OPTION = "raven.nocompression";
-    /**
-     * Option specific to raven-java, allowing to set a timeout (in ms) for a request to the Sentry server.
-     */
-    public static final String TIMEOUT_OPTION = "raven.timeout";
-    /**
-     * Option to send events asynchronously.
-     */
-    public static final String ASYNC_OPTION = "raven.async";
-    /**
-     * Protocol setting to disable security checks over an SSL connection.
-     */
-    public static final String NAIVE_PROTOCOL = "naive";
     /**
      * Lookup name for the DSN in JNDI.
      */
@@ -181,12 +167,17 @@ public class Dsn {
      */
     private void extractOptions(URI dsnUri) {
         String query = dsnUri.getQuery();
-        if (query == null)
+        if (query == null || query.isEmpty())
             return;
-        String[] optionPairs = query.split("&");
-        for (String optionPair : optionPairs) {
-            String[] pairDetails = optionPair.split("=");
-            options.put(pairDetails[0], (pairDetails.length > 1) ? pairDetails[1] : "");
+        for (String optionPair : query.split("&")) {
+            try {
+                String[] pairDetails = optionPair.split("=");
+                String key = URLDecoder.decode(pairDetails[0], "UTF-8");
+                String value = pairDetails.length > 1 ? URLDecoder.decode(pairDetails[1], "UTF-8") : null;
+                options.put(key, value);
+            } catch (UnsupportedEncodingException e) {
+                throw new IllegalArgumentException("Impossible to decode the query parameter '" + optionPair + "'", e);
+            }
         }
     }
 
