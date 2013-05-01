@@ -86,13 +86,6 @@ public class JsonMarshaller implements Marshaller {
         ISO_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
-    public JsonMarshaller() {
-        addInterfaceBinding(ExceptionInterface.class, new ExceptionInterfaceBinding());
-        addInterfaceBinding(StackTraceInterface.class, new StackTraceInterfaceBinding());
-        addInterfaceBinding(MessageInterface.class, new MessageInterfaceBinding());
-        addInterfaceBinding(HttpInterface.class, new HttpInterfaceBinding());
-    }
-
     @Override
     public void marshall(Event event, OutputStream destination) {
 

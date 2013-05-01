@@ -5,7 +5,6 @@ import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.exception.ConnectionException;
 import net.kencochrane.raven.marshaller.Marshaller;
-import net.kencochrane.raven.marshaller.json.JsonMarshaller;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -53,7 +52,7 @@ public class HttpConnection extends AbstractConnection {
     /**
      * Marshaller used to transform and send the {@link Event} over a stream.
      */
-    private Marshaller marshaller = new JsonMarshaller();
+    private Marshaller marshaller;
     /**
      * Timeout of an HTTP connection to Sentry.
      */
@@ -62,7 +61,7 @@ public class HttpConnection extends AbstractConnection {
      * Setting allowing to bypass the security system which requires wildcard certificates
      * to be added to the truststore.
      */
-    private boolean bypassSecurity;
+    private boolean bypassSecurity = false;
 
     public HttpConnection(URL sentryUrl, String publicKey, String secretKey) {
         super(publicKey, secretKey);
@@ -96,7 +95,7 @@ public class HttpConnection extends AbstractConnection {
     }
 
     @Override
-    public void doSend(Event event) {
+    protected void doSend(Event event) {
         HttpURLConnection connection = getConnection();
         try {
             connection.connect();
@@ -123,6 +122,8 @@ public class HttpConnection extends AbstractConnection {
             String line;
             while ((line = reader.readLine()) != null)
                 sb.append(line).append("\n");
+            //Remove last \n
+            sb.deleteCharAt(sb.length()-1);
 
         } catch (Exception e2) {
             logger.log(Level.SEVERE, "Exception while reading the error message from the connection.", e2);

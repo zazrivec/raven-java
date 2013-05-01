@@ -18,7 +18,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class TestStackTraceInterfaceBinding extends AbstractTestInterfaceBinding {
+public class StackTraceInterfaceBindingTest extends AbstractInterfaceBindingTest {
     private StackTraceInterfaceBinding interfaceBinding;
     @Mock
     private StackTraceInterface mockStackTraceInterface;
