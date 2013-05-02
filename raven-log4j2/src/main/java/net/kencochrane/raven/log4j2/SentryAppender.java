@@ -129,16 +129,20 @@ public class SentryAppender extends AbstractAppender<String> {
             Throwable throwable = event.getThrown();
             eventBuilder.addSentryInterface(new ExceptionInterface(throwable))
                     .addSentryInterface(new StackTraceInterface(throwable));
-            eventBuilder.setCulprit(throwable);
         } else if (event.getSource() != null) {
             // When it's a message try to rely on the position of the log (the same message can be logged from
             // different places, or a same place can log a message in different ways).
             String source = formatCulprit(event.getSource());
-            eventBuilder.setCulprit(source);
             eventBuilder.generateChecksum(source);
         }
 
-        if (eventMessage.getFormattedMessage() != eventMessage.getFormat()) {
+        if (event.getSource() != null) {
+            eventBuilder.setCulprit(event.getSource());
+        } else {
+            eventBuilder.setCulprit(event.getLoggerName());
+        }
+
+        if (!eventMessage.getFormattedMessage().equals(eventMessage.getFormat())) {
             eventBuilder.addSentryInterface(new MessageInterface(eventMessage.getFormat(),
                     formatMessageParameters(eventMessage.getParameters())));
         }

@@ -63,8 +63,17 @@ public class SentryHandler extends Handler {
         EventBuilder eventBuilder = new EventBuilder()
                 .setLevel(getLevel(record.getLevel()))
                 .setTimestamp(new Date(record.getMillis()))
-                .setLogger(record.getLoggerName())
-                .setCulprit(record.getSourceClassName() + "." + record.getSourceMethodName() + "()");
+                .setLogger(record.getLoggerName());
+
+        if (record.getSourceClassName() != null && record.getSourceMethodName() != null) {
+
+            StackTraceElement fakeFrame = new StackTraceElement(record.getSourceClassName(),
+                    record.getSourceMethodName(), null, -1);
+            eventBuilder.setCulprit(fakeFrame);
+        } else {
+            eventBuilder.setCulprit(record.getLoggerName());
+        }
+
         if (record.getThrown() != null) {
             eventBuilder.addSentryInterface(new ExceptionInterface(record.getThrown()))
                     .addSentryInterface(new StackTraceInterface(record.getThrown()));
@@ -85,7 +94,7 @@ public class SentryHandler extends Handler {
         if (dsn == null)
             dsn = Dsn.dsnLookup();
 
-        if (raven == null){
+        if (raven == null) {
             //TODO: Add a way to select the factory
             raven = RavenFactory.ravenInstance(new Dsn(dsn));
         }
