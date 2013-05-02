@@ -99,7 +99,7 @@ public class HttpConnectionTest {
         httpConnection.send(new EventBuilder().build());
 
         verify(mockUrlConnection).setRequestProperty("User-Agent", Raven.NAME);
-        String expectedAuthRequest = "Sentry sentry_version=4,"
+        String expectedAuthRequest = "Sentry sentry_version=3,"
                 + "sentry_client=" + Raven.NAME + ","
                 + "sentry_key=" + publicKey + ","
                 + "sentry_secret=" + secretKey;
