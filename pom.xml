@@ -106,7 +106,7 @@
         <maven.compiler.target>6</maven.compiler.target>
 
         <!-- dependencies versions -->
-        <commons-codec.version>1.6</commons-codec.version>
+        <commons-codec.version>1.8</commons-codec.version>
         <jackson.version>2.2.0</jackson.version>
         <javax.servlet-api.version>3.0.1</javax.servlet-api.version>
         <logback.version>1.0.12</logback.version>
@@ -218,7 +218,7 @@
             <plugin>
                 <groupId>com.github.github</groupId>
                 <artifactId>site-maven-plugin</artifactId>
-                <version>0.7</version>
+                <version>0.8</version>
                 <configuration>
                     <message>Creating site for ${project.artifactId} ${project.version}</message>
                     <path>${project.distributionManagement.site.url}</path>
