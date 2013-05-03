@@ -2,6 +2,7 @@ package net.kencochrane.raven.event;
 
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -24,7 +25,7 @@ import java.util.*;
  * </ul>
  * </p>
  */
-public class Event {
+public class Event implements Serializable {
     /**
      * Unique identifier of the event.
      */
@@ -192,7 +193,6 @@ public class Event {
         if (o == null || getClass() != o.getClass()) return false;
 
         return id.equals(((Event) o).id);
-
     }
 
     @Override

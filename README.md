@@ -83,7 +83,7 @@ DSN:
 Not every option requires a value.
 
 ### Async connection
-In order to avoid performance issues due to a large amout of logs being
+In order to avoid performance issues due to a large amount of logs being
 generated or a slow connection to the Sentry server, it is recommended to use
 the asynchronous connection which will use a low priority thread pool to submit
 events to Sentry.
@@ -91,6 +91,19 @@ events to Sentry.
 To enable the async mode, add the `raven.async` option to your DSN:
 
     http://public:private@host:port/1?raven.async
+
+#### Queue size (advanced)
+The default queue used to store the not yet processed events doesn't have a
+limit.
+Depending on the environment (where memory is sparse) it is important to be
+able to control the size of that queue to avoid memory issues.
+
+It is possible to set a maximum with the option `raven.async.queuesize`:
+
+    http://public:private@host:port/1?raven.async&raven.async.queuesize=100
+
+This means that if the connection to the Sentry server, only the first 100
+events will be stored and be processed as soon as the server is back up.
 
 #### Threads count (advanced)
 By default the thread pool used by the async connection contains one thread per

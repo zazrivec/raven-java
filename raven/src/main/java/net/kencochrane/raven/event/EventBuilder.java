@@ -17,7 +17,7 @@ public class EventBuilder {
      */
     public static final String DEFAULT_PLATFORM = "java";
     public static final int HOSTNAME_CACHE_DURATION = 18000000;
-    private static final HostnameCache hostnameCache = new HostnameCache(HOSTNAME_CACHE_DURATION);
+    private static final HostnameCache HOSTNAME_CACHE = new HostnameCache(HOSTNAME_CACHE_DURATION);
     private final Event event;
     private boolean alreadyBuilt = false;
 
@@ -69,7 +69,7 @@ public class EventBuilder {
 
         // Ensure that a hostname is set
         if (event.getServerName() == null)
-            event.setServerName(hostnameCache.getHostname());
+            event.setServerName(HOSTNAME_CACHE.getHostname());
     }
 
     /**
@@ -295,7 +295,7 @@ public class EventBuilder {
      * hostname for a period defined during the construction.
      * </p>
      */
-    private static class HostnameCache {
+    private static final class HostnameCache {
         /**
          * Default hostname if it isn't set manually (or can't be determined).
          */
@@ -305,7 +305,7 @@ public class EventBuilder {
          */
         private final long cacheDuration;
         /**
-         * Current value for hostname (might change over time)
+         * Current value for hostname (might change over time).
          */
         private String hostname = DEFAULT_HOSTNAME;
         /**
