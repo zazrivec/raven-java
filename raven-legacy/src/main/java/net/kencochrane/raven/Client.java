@@ -289,8 +289,7 @@ public class Client {
         try {
             raven.getConnection().close();
         } catch (IOException e) {
-            //TODO: Handle this properly
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
