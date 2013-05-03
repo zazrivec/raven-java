@@ -33,6 +33,7 @@ public class SentryAppender extends AbstractAppender<String> {
     private final boolean propagateClose;
     private Raven raven;
     private String dsn;
+    private String ravenFactory;
 
     public SentryAppender() {
         this(APPENDER_NAME, PatternLayout.createLayout(null, null, null, null), null, true);
@@ -66,6 +67,7 @@ public class SentryAppender extends AbstractAppender<String> {
     @PluginFactory
     public static SentryAppender createAppender(@PluginAttr("name") final String name,
                                                 @PluginAttr("dsn") final String dsn,
+                                                @PluginAttr("ravenFactory") final String ravenFactory,
                                                 @PluginElement("layout") Layout<String> layout,
                                                 @PluginElement("filters") final Filter filter) {
 
@@ -79,6 +81,7 @@ public class SentryAppender extends AbstractAppender<String> {
         }
         SentryAppender sentryAppender = new SentryAppender(name, layout, filter, true);
         sentryAppender.setDsn(dsn);
+        sentryAppender.setRavenFactory(ravenFactory);
         return sentryAppender;
     }
 
@@ -107,12 +110,11 @@ public class SentryAppender extends AbstractAppender<String> {
 
     @Override
     public void start() {
-        if (dsn == null)
-            dsn = Dsn.dsnLookup();
-
         if (raven == null) {
-            //TODO: Add a way to select the factory
-            raven = RavenFactory.ravenInstance(new Dsn(dsn));
+            if (dsn == null)
+                dsn = Dsn.dsnLookup();
+
+            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         }
     }
 
@@ -173,6 +175,10 @@ public class SentryAppender extends AbstractAppender<String> {
         this.dsn = dsn;
     }
 
+    public void setRavenFactory(String ravenFactory) {
+        this.ravenFactory = ravenFactory;
+    }
+
     @Override
     public void stop() {
         super.stop();
@@ -181,8 +187,7 @@ public class SentryAppender extends AbstractAppender<String> {
             if (propagateClose)
                 raven.getConnection().close();
         } catch (IOException e) {
-            //TODO: What to do with that exception?
-            e.printStackTrace();
+            error("An exception occurred while closing the raven connection", e);
         }
     }
 }

@@ -23,6 +23,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     private final boolean propagateClose;
     private Raven raven;
     private String dsn;
+    private String ravenFactory;
 
     public SentryAppender() {
         propagateClose = true;
@@ -61,12 +62,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     public void start() {
         super.start();
 
-        if (dsn == null)
-            dsn = Dsn.dsnLookup();
-
         if (raven == null) {
-            //TODO: Add a way to select the factory
-            raven = RavenFactory.ravenInstance(new Dsn(dsn));
+            if (dsn == null)
+                dsn = Dsn.dsnLookup();
+
+            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         }
     }
 
@@ -122,6 +122,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         this.dsn = dsn;
     }
 
+    public void setRavenFactory(String ravenFactory) {
+        this.ravenFactory = ravenFactory;
+    }
+
     @Override
     public void stop() {
         super.stop();
@@ -130,8 +134,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             if (propagateClose)
                 raven.getConnection().close();
         } catch (IOException e) {
-            //TODO: What to do with that exception?
-            e.printStackTrace();
+            addError("An exception occurred while closing the raven connection", e);
         }
     }
 }

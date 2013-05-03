@@ -9,6 +9,7 @@ import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
+import org.apache.log4j.spi.ErrorCode;
 import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
 
@@ -22,6 +23,7 @@ public class SentryAppender extends AppenderSkeleton {
     private final boolean propagateClose;
     private Raven raven;
     private String dsn;
+    private String ravenFactory;
 
     public SentryAppender() {
         this.propagateClose = true;
@@ -58,12 +60,11 @@ public class SentryAppender extends AppenderSkeleton {
 
     @Override
     public void activateOptions() {
-        if (dsn == null)
-            dsn = Dsn.dsnLookup();
-
         if (raven == null) {
-            //TODO: Add a way to select the factory
-            raven = RavenFactory.ravenInstance(new Dsn(dsn));
+            if (dsn == null)
+                dsn = Dsn.dsnLookup();
+
+            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         }
     }
 
@@ -107,14 +108,18 @@ public class SentryAppender extends AppenderSkeleton {
         this.dsn = dsn;
     }
 
+    public void setRavenFactory(String ravenFactory) {
+        this.ravenFactory = ravenFactory;
+    }
+
     @Override
     public void close() {
         try {
             if (propagateClose)
                 raven.getConnection().close();
         } catch (IOException e) {
-            //TODO: What to do with that exception?
-            e.printStackTrace();
+            getErrorHandler().error("An exception occurred while closing the raven connection", e,
+                    ErrorCode.CLOSE_FAILURE);
         }
     }
 

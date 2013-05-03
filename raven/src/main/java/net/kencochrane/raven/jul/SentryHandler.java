@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.ErrorManager;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -21,6 +22,7 @@ public class SentryHandler extends Handler {
     private final boolean propagateClose;
     private Raven raven;
     private String dsn;
+    private String ravenFactory;
 
     public SentryHandler() {
         propagateClose = true;
@@ -91,18 +93,21 @@ public class SentryHandler extends Handler {
     }
 
     private Raven getRaven() {
-        if (dsn == null)
-            dsn = Dsn.dsnLookup();
-
         if (raven == null) {
-            //TODO: Add a way to select the factory
-            raven = RavenFactory.ravenInstance(new Dsn(dsn));
+            if (dsn == null)
+                dsn = Dsn.dsnLookup();
+
+            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         }
         return raven;
     }
 
     public void setDsn(String dsn) {
         this.dsn = dsn;
+    }
+
+    public void setRavenFactory(String ravenFactory) {
+        this.ravenFactory = ravenFactory;
     }
 
     @Override
@@ -115,8 +120,7 @@ public class SentryHandler extends Handler {
             if (propagateClose)
                 raven.getConnection().close();
         } catch (IOException e) {
-            //TODO: What to do with that exception?
-            e.printStackTrace();
+            reportError("An exception occurred while closing the raven connection", e, ErrorManager.CLOSE_FAILURE);
         }
     }
 }
