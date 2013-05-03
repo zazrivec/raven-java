@@ -184,47 +184,36 @@ Then, add the following lines to web.xml:
 
 ## Installation
 
-This version isn't available in the Central Maven repository yet. The easiest
-way to get started is to clone this repository and install the artifacts into
-your local repository or proxy like Nexus:
-
-    $ git clone https://github.com/kencochrane/raven-java.git
-    $ cd raven-java
-    $ mvn clean install
-
-This will build and test the Raven client and Log4J appender and install it
-into your local repository. You shouldn't worry about stacktraces appearing in
-the output unless tests are failing; they are *supposed* to be there.
-
-Then add the correct dependency to your POM file:
+Raven-2.0 is available in the Central Maven Repository. You 
+can just add the correct dependency to your pom.xml file:
 
     <dependency>
-        <groupId>net.kencochrane</groupId>
+        <groupId>net.kencochrane.raven</groupId>
         <artifactId>raven</artifactId>
-        <version>2.0-SNAPSHOT</version>
+        <version>2.0</version>
     </dependency>
 
 Or if you simply want to log to Sentry from Log4J:
 
     <dependency>
-        <groupId>net.kencochrane</groupId>
+        <groupId>net.kencochrane.raven</groupId>
         <artifactId>raven-log4j</artifactId>
-        <version>2.0-SNAPSHOT</version>
+        <version>2.0</version>
     </dependency>
 
 Or Logback:
 
     <dependency>
-        <groupId>net.kencochrane</groupId>
+        <groupId>net.kencochrane.raven</groupId>
         <artifactId>raven-logback</artifactId>
-        <version>2.0-SNAPSHOT</version>
+        <version>2.0</version>
     </dependency>
 
 * * *
 
 ## History
 
-- 2.0-SNAPSHOT
+- 2.0
     - Version increment to reduce confusion about releases
     - Added Logback appender (thanks to [ccouturi](https://github.com/ccouturi))
 - 1.0
