@@ -19,15 +19,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Default implementation of {@link RavenFactory}.
+ * <p>
+ * In most cases this is the implementation to use or extend for additional features.
+ * </p>
+ */
 public class DefaultRavenFactory extends RavenFactory {
     /**
      * Protocol setting to disable security checks over an SSL connection.
      */
     public static final String NAIVE_PROTOCOL = "naive";
     /**
-     * Option specific to raven-java, allowing to disable the compression of requests to the Sentry Server.
+     * Option specific to raven-java, allowing to enable/disable the compression of requests to the Sentry Server.
      */
-    public static final String NOCOMPRESSION_OPTION = "raven.nocompression";
+    public static final String COMPRESSION_OPTION = "raven.compression";
     /**
      * Option specific to raven-java, allowing to set a timeout (in ms) for a request to the Sentry server.
      */
@@ -53,6 +59,7 @@ public class DefaultRavenFactory extends RavenFactory {
      */
     public static final String HIDE_COMMON_FRAMES_OPTION = "raven.stacktrace.hidecommon";
     private static final Logger logger = Logger.getLogger(DefaultRavenFactory.class.getCanonicalName());
+    private static final String FALSE = Boolean.FALSE.toString();
 
     @Override
     public Raven createRavenInstance(Dsn dsn) {
@@ -82,7 +89,8 @@ public class DefaultRavenFactory extends RavenFactory {
             throw new IllegalStateException("Couldn't create a connection for the protocol '" + protocol + "'");
         }
 
-        if (dsn.getOptions().containsKey(ASYNC_OPTION)) {
+        // Enable async unless its value is 'false'.
+        if (!FALSE.equalsIgnoreCase(dsn.getOptions().get(ASYNC_OPTION))) {
             connection = createAsyncConnection(dsn, connection);
         }
 
@@ -147,7 +155,9 @@ public class DefaultRavenFactory extends RavenFactory {
 
         // Set JSON marshaller bindings
         StackTraceInterfaceBinding stackTraceBinding = new StackTraceInterfaceBinding();
-        stackTraceBinding.setRemoveCommonFramesWithEnclosing(dsn.getOptions().containsKey(HIDE_COMMON_FRAMES_OPTION));
+        // Enable common frames hiding unless its value is 'false'.
+        stackTraceBinding.setRemoveCommonFramesWithEnclosing(
+                !FALSE.equalsIgnoreCase(dsn.getOptions().get(HIDE_COMMON_FRAMES_OPTION)));
         stackTraceBinding.setNotInAppFrames(getNotInAppFrames());
 
         marshaller.addInterfaceBinding(StackTraceInterface.class, stackTraceBinding);
@@ -158,8 +168,8 @@ public class DefaultRavenFactory extends RavenFactory {
         //httpBinding.
         marshaller.addInterfaceBinding(HttpInterface.class, httpBinding);
 
-        // Set compression
-        marshaller.setCompression(!dsn.getOptions().containsKey(NOCOMPRESSION_OPTION));
+        // Enable compression unless the option is set to false
+        marshaller.setCompression(!FALSE.equalsIgnoreCase(dsn.getOptions().get(COMPRESSION_OPTION)));
 
         return marshaller;
     }
@@ -181,7 +191,7 @@ public class DefaultRavenFactory extends RavenFactory {
      * down the main application.
      * </p>
      */
-    private static final class DaemonThreadFactory implements ThreadFactory {
+    protected static final class DaemonThreadFactory implements ThreadFactory {
         private static final AtomicInteger POOL_NUMBER = new AtomicInteger(1);
         private final ThreadGroup group;
         private final AtomicInteger threadNumber = new AtomicInteger(1);

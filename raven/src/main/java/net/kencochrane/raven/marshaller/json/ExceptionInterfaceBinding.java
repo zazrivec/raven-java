@@ -6,6 +6,9 @@ import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
 
 import java.io.IOException;
 
+/**
+ * Binding system allowing to convert an {@link ExceptionInterface} to a JSON stream.
+ */
 public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInterface> {
     private static final String TYPE_PARAMETER = "type";
     private static final String VALUE_PARAMETER = "value";

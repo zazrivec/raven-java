@@ -18,6 +18,9 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Appender for log4j in charge of sending the logged events to a Sentry server.
+ */
 public class SentryAppender extends AppenderSkeleton {
     private static final String LOG4J_NDC = "Log4J-NDC";
     private final boolean propagateClose;
@@ -60,16 +63,27 @@ public class SentryAppender extends AppenderSkeleton {
 
     @Override
     public void activateOptions() {
-        if (raven == null) {
-            if (dsn == null)
-                dsn = Dsn.dsnLookup();
+        try {
+            if (raven == null) {
+                if (dsn == null)
+                    dsn = Dsn.dsnLookup();
 
-            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+                raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+            }
+            super.activateOptions();
+        } catch (Exception e) {
+            getErrorHandler().error("An exception occurred during the creation of a raven instance", e,
+                    ErrorCode.FILE_OPEN_FAILURE);
         }
     }
 
     @Override
     protected void append(LoggingEvent loggingEvent) {
+        Event event = buildEvent(loggingEvent);
+        raven.sendEvent(event);
+    }
+
+    private Event buildEvent(LoggingEvent loggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
                 .setTimestamp(new Date(loggingEvent.getTimeStamp()))
                 .setMessage(loggingEvent.getRenderedMessage())
@@ -100,8 +114,7 @@ public class SentryAppender extends AppenderSkeleton {
             eventBuilder.addExtra(mdcEntry.getKey().toString(), mdcEntry.getValue());
 
         raven.runBuilderHelpers(eventBuilder);
-
-        raven.sendEvent(eventBuilder.build());
+        return eventBuilder.build();
     }
 
     public void setDsn(String dsn) {

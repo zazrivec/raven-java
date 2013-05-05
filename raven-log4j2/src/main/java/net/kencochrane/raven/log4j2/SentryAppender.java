@@ -10,14 +10,12 @@ import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.Filter;
-import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.config.plugins.PluginAttr;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
-import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.apache.logging.log4j.message.Message;
 
 import java.io.IOException;
@@ -26,8 +24,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-@Plugin(name = "Sentry", type = "Sentry", elementType = "appender")
+/**
+ * Appender for log4j2 in charge of sending the logged events to a Sentry server.
+ */
+@Plugin(name = "Raven", type = "Core", elementType = "appender")
 public class SentryAppender extends AbstractAppender<String> {
+    /**
+     * Default name for the appender.
+     */
     public static final String APPENDER_NAME = "raven";
     private static final String LOG4J_NDC = "Log4J-NDC";
     private final boolean propagateClose;
@@ -36,7 +40,7 @@ public class SentryAppender extends AbstractAppender<String> {
     private String ravenFactory;
 
     public SentryAppender() {
-        this(APPENDER_NAME, PatternLayout.createLayout(null, null, null, null), null, true);
+        this(APPENDER_NAME, null, true);
     }
 
 
@@ -45,41 +49,36 @@ public class SentryAppender extends AbstractAppender<String> {
     }
 
     public SentryAppender(Raven raven, boolean propagateClose) {
-        this(APPENDER_NAME, PatternLayout.createLayout(null, null, null, null), null, propagateClose);
+        this(APPENDER_NAME, null, propagateClose);
         this.raven = raven;
     }
 
-    private SentryAppender(String name, Layout<String> layout, Filter filter, boolean propagateClose) {
-        super(name, filter, layout, true);
+    private SentryAppender(String name, Filter filter, boolean propagateClose) {
+        super(name, filter, null, true);
         this.propagateClose = propagateClose;
     }
 
     /**
      * Create a Sentry Appender.
      *
-     * @param name   The name of the Appender.
-     * @param dsn    Data Source Name to access the Sentry server.
-     * @param layout The layout to use to format the event. If no layout is provided the default PatternLayout
-     *               will be used.
-     * @param filter The filter, if any, to use.
+     * @param name         The name of the Appender.
+     * @param dsn          Data Source Name to access the Sentry server.
+     * @param ravenFactory Name of the factory to use to build the {@link Raven} instance.
+     * @param filter       The filter, if any, to use.
      * @return The SentryAppender.
      */
     @PluginFactory
     public static SentryAppender createAppender(@PluginAttr("name") final String name,
                                                 @PluginAttr("dsn") final String dsn,
                                                 @PluginAttr("ravenFactory") final String ravenFactory,
-                                                @PluginElement("layout") Layout<String> layout,
                                                 @PluginElement("filters") final Filter filter) {
 
         if (name == null) {
-            LOGGER.error("No name provided for FileAppender");
+            LOGGER.error("No name provided for SentryAppender");
             return null;
         }
 
-        if (layout == null) {
-            layout = PatternLayout.createLayout(null, null, null, null);
-        }
-        SentryAppender sentryAppender = new SentryAppender(name, layout, filter, true);
+        SentryAppender sentryAppender = new SentryAppender(name, filter, true);
         sentryAppender.setDsn(dsn);
         sentryAppender.setRavenFactory(ravenFactory);
         return sentryAppender;
@@ -110,16 +109,26 @@ public class SentryAppender extends AbstractAppender<String> {
 
     @Override
     public void start() {
-        if (raven == null) {
-            if (dsn == null)
-                dsn = Dsn.dsnLookup();
+        try {
+            if (raven == null) {
+                if (dsn == null)
+                    dsn = Dsn.dsnLookup();
 
-            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+                raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+            }
+            super.start();
+        } catch (Exception e) {
+            error("An exception occurred during the creation of a raven instance", e);
         }
     }
 
     @Override
-    public void append(LogEvent event) {
+    public void append(LogEvent logEvent) {
+        Event event = buildEvent(logEvent);
+        raven.sendEvent(event);
+    }
+
+    private Event buildEvent(LogEvent event) {
         Message eventMessage = event.getMessage();
         EventBuilder eventBuilder = new EventBuilder()
                 .setTimestamp(new Date(event.getMillis()))
@@ -161,7 +170,7 @@ public class SentryAppender extends AbstractAppender<String> {
 
         raven.runBuilderHelpers(eventBuilder);
 
-        raven.sendEvent(eventBuilder.build());
+        return eventBuilder.build();
     }
 
     private List<String> formatMessageParameters(Object[] parameters) {

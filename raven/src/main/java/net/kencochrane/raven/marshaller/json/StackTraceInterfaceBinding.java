@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
 
+/**
+ * Binding allowing to convert a {@link StackTraceInterface} into a JSON stream.
+ */
 public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceInterface> {
     private static final Logger logger = Logger.getLogger(StackTraceInterfaceBinding.class.getCanonicalName());
     private static final String FRAMES_PARAMETER = "frames";

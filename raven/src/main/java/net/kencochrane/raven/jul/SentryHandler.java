@@ -13,16 +13,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.ErrorManager;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
+import java.util.logging.*;
 
+/**
+ * Logging handler in charge of sending the java.util.logging records to a Sentry server.
+ */
 public class SentryHandler extends Handler {
     private final boolean propagateClose;
     private Raven raven;
-    private String dsn;
-    private String ravenFactory;
+    private boolean guard = false;
 
     public SentryHandler() {
         propagateClose = true;
@@ -57,11 +56,29 @@ public class SentryHandler extends Handler {
     }
 
     @Override
-    public void publish(LogRecord record) {
-        if (!isLoggable(record)) {
+    public synchronized void publish(LogRecord record) {
+        if (!isLoggable(record) || guard) {
             return;
         }
 
+        guard = true;
+        try {
+            if (raven == null) {
+                try {
+                    start();
+                } catch (Exception e) {
+                    reportError("An exception occurred while creating an instance of raven", e, ErrorManager.OPEN_FAILURE);
+                    return;
+                }
+            }
+
+            raven.sendEvent(buildEvent(record));
+        } finally {
+            guard = false;
+        }
+    }
+
+    private Event buildEvent(LogRecord record) {
         EventBuilder eventBuilder = new EventBuilder()
                 .setLevel(getLevel(record.getLevel()))
                 .setTimestamp(new Date(record.getMillis()))
@@ -87,27 +104,22 @@ public class SentryHandler extends Handler {
         else
             eventBuilder.setMessage(record.getMessage());
 
-        getRaven().runBuilderHelpers(eventBuilder);
-
-        getRaven().sendEvent(eventBuilder.build());
+        raven.runBuilderHelpers(eventBuilder);
+        return eventBuilder.build();
     }
 
-    private Raven getRaven() {
-        if (raven == null) {
-            if (dsn == null)
-                dsn = Dsn.dsnLookup();
+    private void start() {
+        if (raven != null)
+            return;
 
-            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
-        }
-        return raven;
-    }
+        LogManager manager = LogManager.getLogManager();
+        String dsn = manager.getProperty(this.getClass().getCanonicalName() + ".dsn");
+        String ravenFactory = manager.getProperty(this.getClass().getCanonicalName() + ".ravenFactory");
 
-    public void setDsn(String dsn) {
-        this.dsn = dsn;
-    }
+        if (dsn == null)
+            dsn = Dsn.dsnLookup();
 
-    public void setRavenFactory(String ravenFactory) {
-        this.ravenFactory = ravenFactory;
+        raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
     }
 
     @Override

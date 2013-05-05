@@ -19,6 +19,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Appender for logback in charge of sending the logged events to a Sentry server.
+ */
 public class SentryAppender extends AppenderBase<ILoggingEvent> {
     private final boolean propagateClose;
     private Raven raven;
@@ -60,18 +63,26 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
     @Override
     public void start() {
-        super.start();
+        try {
+            if (raven == null) {
+                if (dsn == null)
+                    dsn = Dsn.dsnLookup();
 
-        if (raven == null) {
-            if (dsn == null)
-                dsn = Dsn.dsnLookup();
-
-            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+                raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+            }
+            super.start();
+        } catch (Exception e) {
+            addError("An exception occurred during the creation of a raven instance", e);
         }
     }
 
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
+        Event event = buildEvent(iLoggingEvent);
+        raven.sendEvent(event);
+    }
+
+    private Event buildEvent(ILoggingEvent iLoggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
                 .setTimestamp(new Date(iLoggingEvent.getTimeStamp()))
                 .setMessage(iLoggingEvent.getFormattedMessage())
@@ -105,7 +116,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
         raven.runBuilderHelpers(eventBuilder);
 
-        raven.sendEvent(eventBuilder.build());
+        return eventBuilder.build();
     }
 
     private String getEventPosition(ILoggingEvent iLoggingEvent) {
