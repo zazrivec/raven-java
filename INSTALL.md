@@ -4,11 +4,9 @@
 Currently there are 6 modules in the project:
 
  - `raven`, the core of the project, providing the client and support for JUL
- - `raven-legacy`, support of the Raven-2.0 API (it's recommended to move
- to the new API as legacy will be removed in the future releases of Raven)
  - `raven-log4j`, Appender for log4j
  - `raven-log4j2`, Appender for log4j2
- - `raven-logback`, Appander for Logback
+ - `raven-logback`, Appender for Logback
  - `sentry-stub`, Sentry server stub, allowing to test the protocol
 
 ### Build
@@ -19,12 +17,8 @@ sources.
     $ cd raven-java
     $ mvn clean install -DskipTests=true
 
-_Due to a [known issue](https://bugs.eclipse.org/bugs/show_bug.cgi?id=405631) in
-jetty, it is currently not possible to run the integration tests from the main
-project. They have to be run manually on each module independently._
-
 ### Maven dependency
-To add raven as a dependency, simply add this to your pom.xml:
+To add raven as a dependency, simply add this to the pom.xml file:
 
     <dependency>
       <groupId>net.kencochrane.raven</groupId>
@@ -32,10 +26,26 @@ To add raven as a dependency, simply add this to your pom.xml:
       <version>4.0-SNAPSHOT</version>
     </dependency>
 
-You can add the other modules the same way (replacing the `artifactId`) with the
+Other modules can be added the same way (replacing the `artifactId`) with the
 name of the module.
 
+If the version is a snapshot it will be necessary to specify the
+Sonatype Nexus snapshot repository:
+
+    <repository>
+        <id>sonatype-nexus-snapshots</id>
+        <name>Sonatype Nexus Snapshots</name>
+        <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        <releases>
+            <enabled>false</enabled>
+        </releases>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+    </repository>
+
 ### Manual installation
+TODO
 
 ## Using Raven
 
