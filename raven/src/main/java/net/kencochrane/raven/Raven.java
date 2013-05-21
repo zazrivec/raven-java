@@ -20,6 +20,15 @@ import java.util.Set;
  */
 public class Raven {
     /**
+     * Indicates whether the current thread has been spawned within raven or not.
+     */
+    public static final ThreadLocal<Boolean> RAVEN_THREAD = new ThreadLocal<Boolean>(){
+        @Override
+        protected Boolean initialValue() {
+            return false;
+        }
+    };
+    /**
      * Version of this client, the major version is the current supported Sentry protocol, the minor version changes
      * for each release of this project.
      */
@@ -59,7 +68,7 @@ public class Raven {
      * @param builderHelper builder helper to remove.
      */
     public void removeBuilderHelper(EventBuilderHelper builderHelper) {
-        logger.error("Removes '" + builderHelper + "' to the list of builder helpers.");
+        logger.info("Removes '" + builderHelper + "' to the list of builder helpers.");
         builderHelpers.remove(builderHelper);
     }
 
@@ -69,7 +78,7 @@ public class Raven {
      * @param builderHelper builder helper to add.
      */
     public void addBuilderHelper(EventBuilderHelper builderHelper) {
-        logger.error("Adding '" + builderHelper + "' to the list of builder helpers.");
+        logger.info("Adding '" + builderHelper + "' to the list of builder helpers.");
         builderHelpers.add(builderHelper);
     }
 
