@@ -114,8 +114,8 @@ public class SentryHandler extends Handler {
             return;
 
         LogManager manager = LogManager.getLogManager();
-        String dsn = manager.getProperty(this.getClass().getCanonicalName() + ".dsn");
-        String ravenFactory = manager.getProperty(this.getClass().getCanonicalName() + ".ravenFactory");
+        String dsn = manager.getProperty(SentryHandler.class.getName() + ".dsn");
+        String ravenFactory = manager.getProperty(SentryHandler.class.getName() + ".ravenFactory");
 
         if (dsn == null)
             dsn = Dsn.dsnLookup();

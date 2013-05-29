@@ -12,6 +12,7 @@ import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
+import org.slf4j.Marker;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -49,14 +50,14 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         return arguments;
     }
 
-    private static Event.Level formatLevel(ILoggingEvent iLoggingEvent) {
-        if (iLoggingEvent.getLevel().isGreaterOrEqual(Level.ERROR)) {
+    private static Event.Level formatLevel(Level level) {
+        if (level.isGreaterOrEqual(Level.ERROR)) {
             return Event.Level.ERROR;
-        } else if (iLoggingEvent.getLevel().isGreaterOrEqual(Level.WARN)) {
+        } else if (level.isGreaterOrEqual(Level.WARN)) {
             return Event.Level.WARNING;
-        } else if (iLoggingEvent.getLevel().isGreaterOrEqual(Level.INFO)) {
+        } else if (level.isGreaterOrEqual(Level.INFO)) {
             return Event.Level.INFO;
-        } else if (iLoggingEvent.getLevel().isGreaterOrEqual(Level.ALL)) {
+        } else if (level.isGreaterOrEqual(Level.ALL)) {
             return Event.Level.DEBUG;
         } else return null;
     }
@@ -91,21 +92,20 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 .setTimestamp(new Date(iLoggingEvent.getTimeStamp()))
                 .setMessage(iLoggingEvent.getFormattedMessage())
                 .setLogger(iLoggingEvent.getLoggerName())
-                .setLevel(formatLevel(iLoggingEvent));
+                .setLevel(formatLevel(iLoggingEvent.getLevel()));
+
+        if (iLoggingEvent.getArgumentArray() != null)
+            eventBuilder.addSentryInterface(new MessageInterface(iLoggingEvent.getMessage(),
+                    formatArguments(iLoggingEvent.getArgumentArray())));
 
         if (iLoggingEvent.getThrowableProxy() != null) {
             Throwable throwable = ((ThrowableProxy) iLoggingEvent.getThrowableProxy()).getThrowable();
             eventBuilder.addSentryInterface(new ExceptionInterface(throwable))
                     .addSentryInterface(new StackTraceInterface(throwable));
-        } else {
-            if (iLoggingEvent.getArgumentArray() != null)
-                eventBuilder.addSentryInterface(new MessageInterface(iLoggingEvent.getMessage(),
-                        formatArguments(iLoggingEvent.getArgumentArray())));
+        } else if (iLoggingEvent.getCallerData().length > 0) {
             // When it's a message try to rely on the position of the log (the same message can be logged from
             // different places, or a same place can log a message in different ways.
-            if (iLoggingEvent.getCallerData().length > 0) {
-                eventBuilder.generateChecksum(getEventPosition(iLoggingEvent));
-            }
+            eventBuilder.generateChecksum(getEventPosition(iLoggingEvent));
         }
 
         if (iLoggingEvent.getCallerData().length > 0) {
@@ -116,6 +116,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
         for (Map.Entry<String, String> mdcEntry : iLoggingEvent.getMDCPropertyMap().entrySet()) {
             eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
+        }
+
+        if (iLoggingEvent.getMarker() != null) {
+            eventBuilder.addExtra(Marker.class.getName(), iLoggingEvent.getMarker());
         }
 
         raven.runBuilderHelpers(eventBuilder);
