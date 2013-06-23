@@ -1,6 +1,6 @@
 package net.kencochrane.raven.log4j;
 
-import net.kencochrane.raven.Dsn;
+import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.event.Event;
@@ -21,7 +21,7 @@ import java.util.Map;
  * Appender for log4j in charge of sending the logged events to a Sentry server.
  */
 public class SentryAppender extends AppenderSkeleton {
-    private static final String LOG4J_NDC = "Log4J-NDC";
+    private static final String LOG4J_NDC = "log4J-NDC";
     private final boolean propagateClose;
     private Raven raven;
     private String dsn;

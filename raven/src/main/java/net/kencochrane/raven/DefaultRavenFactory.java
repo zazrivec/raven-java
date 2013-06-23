@@ -4,6 +4,7 @@ import net.kencochrane.raven.connection.AsyncConnection;
 import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.connection.HttpConnection;
 import net.kencochrane.raven.connection.UdpConnection;
+import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.event.helper.HttpEventBuilderHelper;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.HttpInterface;
@@ -70,7 +71,7 @@ public class DefaultRavenFactory extends RavenFactory {
             Class.forName("javax.servlet.Servlet", false, this.getClass().getClassLoader());
             //TODO: Is it enough? Shouldn't it look for Servlet >= 3.0 ?
             raven.addBuilderHelper(new HttpEventBuilderHelper());
-        } catch (Exception e) {
+        } catch (ClassNotFoundException e) {
             logger.trace("It seems that the current environment doesn't provide access to servlets.");
         }
         return raven;

@@ -1,6 +1,6 @@
 package net.kencochrane.raven.jul;
 
-import net.kencochrane.raven.Dsn;
+import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.event.Event;
@@ -86,7 +86,6 @@ public class SentryHandler extends Handler {
                 .setLogger(record.getLoggerName());
 
         if (record.getSourceClassName() != null && record.getSourceMethodName() != null) {
-
             StackTraceElement fakeFrame = new StackTraceElement(record.getSourceClassName(),
                     record.getSourceMethodName(), null, -1);
             eventBuilder.setCulprit(fakeFrame);
@@ -99,11 +98,12 @@ public class SentryHandler extends Handler {
                     .addSentryInterface(new StackTraceInterface(record.getThrown()));
         }
 
-        if (record.getParameters() != null)
+        if (record.getParameters() != null) {
             eventBuilder.addSentryInterface(new MessageInterface(record.getMessage(),
                     formatParameters(record.getParameters())));
-        else
+        } else {
             eventBuilder.setMessage(record.getMessage());
+        }
 
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();

@@ -4,7 +4,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.AppenderBase;
-import net.kencochrane.raven.Dsn;
+import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.event.Event;
@@ -24,6 +24,7 @@ import java.util.Map;
  * Appender for logback in charge of sending the logged events to a Sentry server.
  */
 public class SentryAppender extends AppenderBase<ILoggingEvent> {
+    private static final String LOGBACK_MARKER = "logback-Marker";
     private final boolean propagateClose;
     private Raven raven;
     private String dsn;
@@ -119,7 +120,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         }
 
         if (iLoggingEvent.getMarker() != null) {
-            eventBuilder.addExtra(Marker.class.getName(), iLoggingEvent.getMarker());
+            eventBuilder.addExtra(LOGBACK_MARKER, iLoggingEvent.getMarker());
         }
 
         raven.runBuilderHelpers(eventBuilder);

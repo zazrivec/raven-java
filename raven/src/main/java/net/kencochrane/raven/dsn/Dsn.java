@@ -1,13 +1,9 @@
-package net.kencochrane.raven;
+package net.kencochrane.raven.dsn;
 
-import net.kencochrane.raven.exception.InvalidDsnException;
+import net.kencochrane.raven.Raven;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.naming.NoInitialContextException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -22,10 +18,6 @@ public class Dsn {
      * Name of the environment or system variable containing the DSN.
      */
     public static final String DSN_VARIABLE = "SENTRY_DSN";
-    /**
-     * Lookup name for the DSN in JNDI.
-     */
-    private static final String JNDI_DSN_NAME = "java:comp/env/sentry/dsn";
     private static final Logger logger = LoggerFactory.getLogger(Raven.class);
     private String secretKey;
     private String publicKey;
@@ -51,7 +43,7 @@ public class Dsn {
      * @param dsn dsn in a string form.
      * @throws InvalidDsnException the given DSN isn't usable.
      */
-    public Dsn(String dsn) {
+    public Dsn(String dsn) throws InvalidDsnException {
         if (dsn == null)
             throw new InvalidDsnException("The sentry DSN must be provided and not be null");
 
@@ -86,14 +78,10 @@ public class Dsn {
 
         // Try to obtain the DSN from JNDI
         try {
-            Context c = new InitialContext();
-            dsn = (String) c.lookup(JNDI_DSN_NAME);
-        } catch (NoInitialContextException e) {
-            logger.trace("JNDI not configured for sentry (NoInitialContextEx)");
-        } catch (NamingException e) {
-            logger.trace("No /sentry/dsn in JNDI");
-        } catch (RuntimeException ex) {
-            logger.warn("Odd RuntimeException while testing for JNDI", ex);
+            Class.forName("javax.naming.InitialContext", false, Dsn.class.getClassLoader());
+            dsn = JndiLookup.jndiLookup();
+        } catch (ClassNotFoundException e) {
+            logger.trace("JNDI not available");
         }
 
         // Try to obtain the DSN from a System Environment Variable
