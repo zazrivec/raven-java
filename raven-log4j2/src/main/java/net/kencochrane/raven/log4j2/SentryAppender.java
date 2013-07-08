@@ -33,12 +33,39 @@ public class SentryAppender extends AbstractAppender<String> {
      * Default name for the appender.
      */
     public static final String APPENDER_NAME = "raven";
-    private static final String LOG4J_NDC = "log4j2-NDC";
-    private static final String LOG4J_MARKER = "log4j2-Marker";
+    /**
+     * Name of the {@link Event#extra} property containing NDC details.
+     */
+    protected static final String LOG4J_NDC = "log4j2-NDC";
+    /**
+     * Name of the {@link Event#extra} property containing Marker details.
+     */
+    protected static final String LOG4J_MARKER = "log4j2-Marker";
+    /**
+     * Name of the {@link Event#extra} property containing the Thread name.
+     */
+    protected static final String THREAD_NAME = "Raven-Threadname";
+    /**
+     * Current instance of {@link Raven}.
+     *
+     * @see #initRaven()
+     */
+    protected Raven raven;
+    /**
+     * DSN property of the appender.
+     * <p>
+     * Might be null in which case the DSN should be detected automatically.
+     * </p>
+     */
+    protected String dsn;
+    /**
+     * Name of the {@link RavenFactory} being used.
+     * <p>
+     * Might be null in which case the factory should be defined automatically.
+     * </p>
+     */
+    protected String ravenFactory;
     private final boolean propagateClose;
-    private Raven raven;
-    private String dsn;
-    private String ravenFactory;
 
     public SentryAppender() {
         this(APPENDER_NAME, null, true);
@@ -85,7 +112,13 @@ public class SentryAppender extends AbstractAppender<String> {
         return sentryAppender;
     }
 
-    private static Event.Level formatLevel(Level level) {
+    /**
+     * Transforms a {@link Level} into an {@link Event.Level}.
+     *
+     * @param level original level as defined in log4j2.
+     * @return log level used within raven.
+     */
+    protected static Event.Level formatLevel(Level level) {
         switch (level) {
             case FATAL:
                 return Event.Level.FATAL;
@@ -103,11 +136,45 @@ public class SentryAppender extends AbstractAppender<String> {
         }
     }
 
-    private static String formatCulprit(StackTraceElement stackTraceElement) {
-        return stackTraceElement.getClassName() + "." + stackTraceElement.getMethodName()
-                + " at line " + stackTraceElement.getLineNumber();
+    /**
+     * Gets the position of the event as a String.
+     * <p>
+     * Allows to generate a checksum when there is no stacktrace but the position of the log can be found.
+     * </p>
+     *
+     * @param event event without stacktrace but with a position.
+     * @return a string version of the position.
+     */
+    protected static String getEventPosition(LogEvent event) {
+        StackTraceElement stackTraceElement = event.getSource();
+        return stackTraceElement.getClassName() + stackTraceElement.getMethodName() + stackTraceElement.getLineNumber();
     }
 
+    /**
+     * Extracts message parameters into a List of Strings.
+     * <p>
+     * null parameters are kept as null.
+     * </p>
+     *
+     * @param parameters parameters provided to the logging system.
+     * @return the parameters formatted as Strings in a List.
+     */
+    protected static List<String> formatMessageParameters(Object[] parameters) {
+        List<String> stringParameters = new ArrayList<String>(parameters.length);
+        for (Object parameter : parameters)
+            stringParameters.add((parameter != null) ? parameter.toString() : null);
+        return stringParameters;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The raven instance is set in this method instead of {@link #start()} in order to avoid substitute loggers
+     * being generated during the instantiation of {@link Raven}.<br />
+     * </p>
+     *
+     * @param logEvent The LogEvent.
+     */
     @Override
     public void append(LogEvent logEvent) {
 
@@ -116,19 +183,15 @@ public class SentryAppender extends AbstractAppender<String> {
             return;
 
         if (raven == null)
-            startRaven();
+            initRaven();
         Event event = buildEvent(logEvent);
         raven.sendEvent(event);
     }
 
     /**
      * Initialises the Raven instance.
-     * <p>
-     * The raven instance is set in this method instead of {@link #start()} in order to avoid substitute loggers
-     * being generated during the instantiation of {@link Raven}.<br />
-     * </p>
      */
-    private void startRaven() {
+    protected void initRaven() {
         try {
             if (dsn == null)
                 dsn = Dsn.dsnLookup();
@@ -139,13 +202,20 @@ public class SentryAppender extends AbstractAppender<String> {
         }
     }
 
-    private Event buildEvent(LogEvent event) {
+    /**
+     * Builds an Event based on the logging event.
+     *
+     * @param event Log generated.
+     * @return Event containing details provided by the logging system.
+     */
+    protected Event buildEvent(LogEvent event) {
         Message eventMessage = event.getMessage();
         EventBuilder eventBuilder = new EventBuilder()
                 .setTimestamp(new Date(event.getMillis()))
                 .setMessage(eventMessage.getFormattedMessage())
                 .setLogger(event.getLoggerName())
-                .setLevel(formatLevel(event.getLevel()));
+                .setLevel(formatLevel(event.getLevel()))
+                .addExtra(THREAD_NAME, event.getThreadName());
 
         if (event.getThrown() != null) {
             Throwable throwable = event.getThrown();
@@ -160,8 +230,7 @@ public class SentryAppender extends AbstractAppender<String> {
         } else if (event.getSource() != null) {
             // When it's a message try to rely on the position of the log (the same message can be logged from
             // different places, or a same place can log a message in different ways).
-            String source = formatCulprit(event.getSource());
-            eventBuilder.generateChecksum(source);
+            eventBuilder.generateChecksum(getEventPosition(event));
         }
 
         if (event.getSource() != null) {
@@ -206,13 +275,6 @@ public class SentryAppender extends AbstractAppender<String> {
         } while (e.getCause() != e && e.getCause() != null);
 
         return sb.toString();
-    }
-
-    private List<String> formatMessageParameters(Object[] parameters) {
-        List<String> stringParameters = new ArrayList<String>(parameters.length);
-        for (Object parameter : parameters)
-            stringParameters.add((parameter != null) ? parameter.toString() : null);
-        return stringParameters;
     }
 
     public void setDsn(String dsn) {

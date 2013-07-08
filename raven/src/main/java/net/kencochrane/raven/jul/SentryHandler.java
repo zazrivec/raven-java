@@ -19,12 +19,32 @@ import java.util.logging.*;
  * Logging handler in charge of sending the java.util.logging records to a Sentry server.
  */
 public class SentryHandler extends Handler {
+    /**
+     * Current instance of {@link Raven}.
+     *
+     * @see #initRaven()
+     */
+    protected Raven raven;
+    /**
+     * DSN property of the appender.
+     * <p>
+     * Might be null in which case the DSN should be detected automatically.
+     * </p>
+     */
+    protected String dsn;
+    /**
+     * Name of the {@link RavenFactory} being used.
+     * <p>
+     * Might be null in which case the factory should be defined automatically.
+     * </p>
+     */
+    protected String ravenFactory;
     private final boolean propagateClose;
-    private Raven raven;
     private boolean guard = false;
 
     public SentryHandler() {
         propagateClose = true;
+        retrieveProperties();
     }
 
     public SentryHandler(Raven raven) {
@@ -36,7 +56,13 @@ public class SentryHandler extends Handler {
         this.propagateClose = propagateClose;
     }
 
-    private static Event.Level getLevel(Level level) {
+    /**
+     * Transforms a {@link Level} into an {@link Event.Level}.
+     *
+     * @param level original level as defined in JUL.
+     * @return log level used within raven.
+     */
+    protected static Event.Level getLevel(Level level) {
         if (level.intValue() >= Level.SEVERE.intValue())
             return Event.Level.ERROR;
         else if (level.intValue() >= Level.WARNING.intValue())
@@ -48,11 +74,29 @@ public class SentryHandler extends Handler {
         else return null;
     }
 
-    private static List<String> formatParameters(Object[] parameters) {
+    /**
+     * Extracts message parameters into a List of Strings.
+     * <p>
+     * null parameters are kept as null.
+     * </p>
+     *
+     * @param parameters parameters provided to the logging system.
+     * @return the parameters formatted as Strings in a List.
+     */
+    protected static List<String> formatMessageParameters(Object[] parameters) {
         List<String> formattedParameters = new ArrayList<String>(parameters.length);
         for (Object parameter : parameters)
             formattedParameters.add((parameter != null) ? parameter.toString() : null);
         return formattedParameters;
+    }
+
+    /**
+     * Retrieves the properties of the logger.
+     */
+    protected void retrieveProperties() {
+        LogManager manager = LogManager.getLogManager();
+        dsn = manager.getProperty(SentryHandler.class.getName() + ".dsn");
+        ravenFactory = manager.getProperty(SentryHandler.class.getName() + ".ravenFactory");
     }
 
     @Override
@@ -64,22 +108,36 @@ public class SentryHandler extends Handler {
 
         try {
             guard = true;
-            if (raven == null) {
-                try {
-                    start();
-                } catch (Exception e) {
-                    reportError("An exception occurred while creating an instance of raven", e, ErrorManager.OPEN_FAILURE);
-                    return;
-                }
-            }
-
-            raven.sendEvent(buildEvent(record));
+            if (raven == null)
+                initRaven();
+            Event event = buildEvent(record);
+            raven.sendEvent(event);
         } finally {
             guard = false;
         }
     }
 
-    private Event buildEvent(LogRecord record) {
+    /**
+     * Initialises the Raven instance.
+     */
+    protected void initRaven() {
+        try {
+            if (dsn == null)
+                dsn = Dsn.dsnLookup();
+
+            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+        } catch (Exception e) {
+            reportError("An exception occurred during the creation of a raven instance", e, ErrorManager.OPEN_FAILURE);
+        }
+    }
+
+    /**
+     * Builds an Event based on the log record.
+     *
+     * @param record Log generated.
+     * @return Event containing details provided by the logging system.
+     */
+    protected Event buildEvent(LogRecord record) {
         EventBuilder eventBuilder = new EventBuilder()
                 .setLevel(getLevel(record.getLevel()))
                 .setTimestamp(new Date(record.getMillis()))
@@ -107,7 +165,7 @@ public class SentryHandler extends Handler {
 
         if (record.getParameters() != null) {
             eventBuilder.addSentryInterface(new MessageInterface(record.getMessage(),
-                    formatParameters(record.getParameters())));
+                    formatMessageParameters(record.getParameters())));
         } else {
             eventBuilder.setMessage(record.getMessage());
         }
@@ -129,20 +187,6 @@ public class SentryHandler extends Handler {
         } while (e.getCause() != e && e.getCause() != null);
 
         return sb.toString();
-    }
-
-    private void start() {
-        if (raven != null)
-            return;
-
-        LogManager manager = LogManager.getLogManager();
-        String dsn = manager.getProperty(SentryHandler.class.getName() + ".dsn");
-        String ravenFactory = manager.getProperty(SentryHandler.class.getName() + ".ravenFactory");
-
-        if (dsn == null)
-            dsn = Dsn.dsnLookup();
-
-        raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
     }
 
     @Override

@@ -21,11 +21,35 @@ import java.util.Map;
  * Appender for log4j in charge of sending the logged events to a Sentry server.
  */
 public class SentryAppender extends AppenderSkeleton {
-    private static final String LOG4J_NDC = "log4J-NDC";
+    /**
+     * Name of the {@link Event#extra} property containing NDC details.
+     */
+    protected static final String LOG4J_NDC = "log4J-NDC";
+    /**
+     * Name of the {@link Event#extra} property containing the Thread name.
+     */
+    protected static final String THREAD_NAME = "Raven-Threadname";
+    /**
+     * Current instance of {@link Raven}.
+     *
+     * @see #initRaven()
+     */
+    protected Raven raven;
+    /**
+     * DSN property of the appender.
+     * <p>
+     * Might be null in which case the DSN should be detected automatically.
+     * </p>
+     */
+    protected String dsn;
+    /**
+     * Name of the {@link RavenFactory} being used.
+     * <p>
+     * Might be null in which case the factory should be defined automatically.
+     * </p>
+     */
+    protected String ravenFactory;
     private final boolean propagateClose;
-    private Raven raven;
-    private String dsn;
-    private String ravenFactory;
     private boolean guard;
 
     public SentryAppender() {
@@ -41,7 +65,13 @@ public class SentryAppender extends AppenderSkeleton {
         this.propagateClose = propagateClose;
     }
 
-    private static Event.Level formatLevel(Level level) {
+    /**
+     * Transforms a {@link Level} into an {@link Event.Level}.
+     *
+     * @param level original level as defined in log4j.
+     * @return log level used within raven.
+     */
+    protected static Event.Level formatLevel(Level level) {
         if (level.isGreaterOrEqual(Level.FATAL)) {
             return Event.Level.FATAL;
         } else if (level.isGreaterOrEqual(Level.ERROR)) {
@@ -55,7 +85,13 @@ public class SentryAppender extends AppenderSkeleton {
         } else return null;
     }
 
-    private static StackTraceElement asStackTraceElement(LocationInfo location) {
+    /**
+     * Transforms the location info of a log into a stacktrace element (stackframe).
+     *
+     * @param location details on the location of the log.
+     * @return a stackframe.
+     */
+    protected static StackTraceElement asStackTraceElement(LocationInfo location) {
         String fileName = (LocationInfo.NA.equals(location.getFileName())) ? null : location.getFileName();
         int line = (LocationInfo.NA.equals(location.getLineNumber())) ? -1 : Integer.parseInt(location.getLineNumber());
         return new StackTraceElement(location.getClassName(), location.getMethodName(), fileName, line);
@@ -63,14 +99,20 @@ public class SentryAppender extends AppenderSkeleton {
 
     @Override
     public void activateOptions() {
-        try {
-            if (raven == null) {
-                if (dsn == null)
-                    dsn = Dsn.dsnLookup();
+        super.activateOptions();
+        if (raven == null)
+            initRaven();
+    }
 
-                raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
-            }
-            super.activateOptions();
+    /**
+     * Initialises the Raven instance.
+     */
+    protected void initRaven() {
+        try {
+            if (dsn == null)
+                dsn = Dsn.dsnLookup();
+
+            raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         } catch (Exception e) {
             getErrorHandler().error("An exception occurred during the creation of a raven instance", e,
                     ErrorCode.FILE_OPEN_FAILURE);
@@ -93,12 +135,19 @@ public class SentryAppender extends AppenderSkeleton {
         }
     }
 
-    private Event buildEvent(LoggingEvent loggingEvent) {
+    /**
+     * Builds an Event based on the logging event.
+     *
+     * @param loggingEvent Log generated.
+     * @return Event containing details provided by the logging system.
+     */
+    protected Event buildEvent(LoggingEvent loggingEvent) {
         EventBuilder eventBuilder = new EventBuilder()
                 .setTimestamp(new Date(loggingEvent.getTimeStamp()))
                 .setMessage(loggingEvent.getRenderedMessage())
                 .setLogger(loggingEvent.getLoggerName())
-                .setLevel(formatLevel(loggingEvent.getLevel()));
+                .setLevel(formatLevel(loggingEvent.getLevel()))
+                .addExtra(THREAD_NAME, loggingEvent.getThreadName());
 
         if (loggingEvent.getThrowableInformation() != null) {
             Throwable throwable = loggingEvent.getThrowableInformation().getThrowable();
