@@ -174,7 +174,13 @@ public class SentryHandler extends Handler {
         return eventBuilder.build();
     }
 
-    private String buildStackTrace(Throwable e) {
+    /**
+     * Builds a String version of the stacktrace including the stacktrace of the causes.
+     *
+     * @param e exception from which the stacktrace should be extracted.
+     * @return a String version of the stacktrace.
+     */
+    protected String buildStackTrace(Throwable e) {
         StringBuilder sb = new StringBuilder();
         do {
             for (StackTraceElement stackTraceElement : e.getStackTrace()) {
