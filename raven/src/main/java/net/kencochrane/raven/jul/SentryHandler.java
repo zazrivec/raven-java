@@ -186,7 +186,7 @@ public class SentryHandler extends Handler {
      */
     protected String buildStackTrace(Throwable e) {
         StringBuilder sb = new StringBuilder();
-        do {
+        while (e != null) {
             for (StackTraceElement stackTraceElement : e.getStackTrace()) {
                 sb.append(stackTraceElement.getClassName())
                         .append(stackTraceElement.getMethodName())
@@ -194,8 +194,8 @@ public class SentryHandler extends Handler {
                         .append(stackTraceElement.getLineNumber())
                         .append('\n');
             }
-        } while (e.getCause() != e && e.getCause() != null);
-
+            e = e.getCause();
+        }
         return sb.toString();
     }
 
