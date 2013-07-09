@@ -10,6 +10,7 @@ import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
 
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -143,12 +144,15 @@ public class SentryHandler extends Handler {
                 .setTimestamp(new Date(record.getMillis()))
                 .setLogger(record.getLoggerName());
 
-        if (record.getSourceClassName() != null && record.getSourceMethodName() != null) {
-            StackTraceElement fakeFrame = new StackTraceElement(record.getSourceClassName(),
-                    record.getSourceMethodName(), null, -1);
-            eventBuilder.setCulprit(fakeFrame);
+        if (record.getResourceBundle().containsKey(record.getMessage())) {
+            String message = record.getResourceBundle().getString(record.getMessage());
+            Object[] parameters = record.getParameters();
+            eventBuilder.setMessage(MessageFormat.format(message, parameters));
+
+            if (parameters != null)
+                eventBuilder.addSentryInterface(new MessageInterface(message, formatMessageParameters(parameters)));
         } else {
-            eventBuilder.setCulprit(record.getLoggerName());
+            eventBuilder.setMessage(record.getMessage());
         }
 
         if (record.getThrown() != null) {
@@ -163,11 +167,12 @@ public class SentryHandler extends Handler {
                 eventBuilder.generateChecksum(buildStackTrace(throwable));
         }
 
-        if (record.getParameters() != null) {
-            eventBuilder.addSentryInterface(new MessageInterface(record.getMessage(),
-                    formatMessageParameters(record.getParameters())));
+        if (record.getSourceClassName() != null && record.getSourceMethodName() != null) {
+            StackTraceElement fakeFrame = new StackTraceElement(record.getSourceClassName(),
+                    record.getSourceMethodName(), null, -1);
+            eventBuilder.setCulprit(fakeFrame);
         } else {
-            eventBuilder.setMessage(record.getMessage());
+            eventBuilder.setCulprit(record.getLoggerName());
         }
 
         raven.runBuilderHelpers(eventBuilder);

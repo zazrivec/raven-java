@@ -168,9 +168,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 .setLevel(formatLevel(iLoggingEvent.getLevel()))
                 .addExtra(THREAD_NAME, iLoggingEvent.getThreadName());
 
-        if (iLoggingEvent.getArgumentArray() != null)
+        if (iLoggingEvent.getArgumentArray() != null) {
             eventBuilder.addSentryInterface(new MessageInterface(iLoggingEvent.getMessage(),
                     formatMessageParameters(iLoggingEvent.getArgumentArray())));
+        }
 
         if (iLoggingEvent.getThrowableProxy() != null) {
             Throwable throwable = ((ThrowableProxy) iLoggingEvent.getThrowableProxy()).getThrowable();
@@ -183,9 +184,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 // No need to do that if exceptions aren't chained.
                 eventBuilder.generateChecksum(buildStackTrace(throwable));
         } else if (iLoggingEvent.getCallerData().length > 0) {
-            // When there is no exceptions try to rely on the position of the log (the same message can be logged from
-            // different places, or a same place can log a message in different ways).
-            eventBuilder.generateChecksum(getEventPosition(iLoggingEvent));
+            eventBuilder.addSentryInterface(new StackTraceInterface(iLoggingEvent.getCallerData()));
         }
 
         if (iLoggingEvent.getCallerData().length > 0) {
@@ -198,12 +197,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             eventBuilder.addExtra(mdcEntry.getKey(), mdcEntry.getValue());
         }
 
-        if (iLoggingEvent.getMarker() != null) {
+        if (iLoggingEvent.getMarker() != null)
             eventBuilder.addExtra(LOGBACK_MARKER, iLoggingEvent.getMarker());
-        }
 
         raven.runBuilderHelpers(eventBuilder);
-
         return eventBuilder.build();
     }
 

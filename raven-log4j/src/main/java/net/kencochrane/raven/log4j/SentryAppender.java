@@ -160,9 +160,11 @@ public class SentryAppender extends AppenderSkeleton {
                 // No need to do that if exceptions aren't chained.
                 eventBuilder.generateChecksum(buildStackTrace(throwable));
         } else if (loggingEvent.getLocationInformation().fullInfo != null) {
-            // When it's a message try to rely on the position of the log (the same message can be logged from
-            // different places, or a same place can log a message in different ways).
-            eventBuilder.generateChecksum(loggingEvent.getLocationInformation().fullInfo);
+            LocationInfo location = loggingEvent.getLocationInformation();
+            if (!LocationInfo.NA.equals(location.getFileName()) && !LocationInfo.NA.equals(location.getLineNumber())) {
+                StackTraceElement[] stackTrace = {asStackTraceElement(location)};
+                eventBuilder.addSentryInterface(new StackTraceInterface(stackTrace));
+            }
         }
 
         // Set culprit
