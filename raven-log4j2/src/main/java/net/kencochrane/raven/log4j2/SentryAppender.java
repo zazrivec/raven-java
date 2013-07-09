@@ -233,8 +233,9 @@ public class SentryAppender extends AbstractAppender<String> {
                 // No need to do that if exceptions aren't chained.
                 eventBuilder.generateChecksum(buildStackTrace(throwable));
         } else if (event.getSource() != null) {
-            StackTraceElement[] stackTrace = {event.getSource()};
-            eventBuilder.addSentryInterface(new StackTraceInterface(stackTrace));
+            Throwable throwable = new Throwable();
+            throwable.setStackTrace(new StackTraceElement[]{event.getSource()});
+            eventBuilder.addSentryInterface(new StackTraceInterface(throwable));
         }
 
         if (event.getSource() != null) {

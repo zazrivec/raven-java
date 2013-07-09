@@ -184,7 +184,9 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 // No need to do that if exceptions aren't chained.
                 eventBuilder.generateChecksum(buildStackTrace(throwable));
         } else if (iLoggingEvent.getCallerData().length > 0) {
-            eventBuilder.addSentryInterface(new StackTraceInterface(iLoggingEvent.getCallerData()));
+            Throwable throwable = new Throwable();
+            throwable.setStackTrace(iLoggingEvent.getCallerData());
+            eventBuilder.addSentryInterface(new StackTraceInterface(throwable));
         }
 
         if (iLoggingEvent.getCallerData().length > 0) {
