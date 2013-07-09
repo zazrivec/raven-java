@@ -24,7 +24,7 @@ import static org.mockito.Mockito.verify;
 @RunWith(MockitoJUnitRunner.class)
 public abstract class AbstractLoggerTest {
     @Mock
-    private Raven mockRaven;
+    protected Raven mockRaven;
 
     @Test
     public void testSimpleMessageLogging() throws Exception {
@@ -52,6 +52,13 @@ public abstract class AbstractLoggerTest {
     public abstract void logAnyLevel(String message, List<String> parameters);
 
     public abstract String getCurrentLoggerName();
+
+    /**
+     * Returns the format of the parametrised message "Some content %s %s %s" with '%s' being the wildcard.
+     *
+     * @return the format of the parametrised message.
+     */
+    public abstract String getUnformattedMessage();
 
     @Test
     public abstract void testLogLevelConversions() throws Exception;
@@ -92,7 +99,7 @@ public abstract class AbstractLoggerTest {
     @Test
     public void testLogParametrisedMessage() throws Exception {
         ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        String message = "Some content %s";
+        String message = getUnformattedMessage();
         List<String> parameters = Arrays.asList(null, UUID.randomUUID().toString(), UUID.randomUUID().toString());
         Event event;
 
@@ -106,5 +113,9 @@ public abstract class AbstractLoggerTest {
 
         assertThat(messageInterface.getMessage(), is(message));
         assertThat(messageInterface.getParams(), is(parameters));
+        assertThat(event.getMessage(), is(
+                "Some content " + parameters.get(0)
+                        + " " + parameters.get(1)
+                        + " " + parameters.get(2)));
     }
 }
