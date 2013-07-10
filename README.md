@@ -2,42 +2,83 @@
 
 [![Build Status](https://secure.travis-ci.org/kencochrane/raven-java.png?branch=raven-3.x)](http://travis-ci.org/kencochrane/raven-java)
 
-Raven is a Java client for [Sentry](https://www.getsentry.com/).
-Besides the regular client you can use within your application code, this
-project also provides tools allowing the most popular logging frameworks
-to send the logs directly to sentry:
+Raven is the Java client for [Sentry](https://www.getsentry.com/).
+Raven relies on the most popular logging libraries to capture and convert logs
+before sending details to a Sentry instance.
 
- - `java.util.logging` is supported out of the box.
- - `raven-log4j` adds the support for
- [log4j](https://logging.apache.org/log4j/1.2/).
- - `raven-log4j2` adds the support for
- [log4j2](https://logging.apache.org/log4j/2.x/).
- - `raven-logback` adds the support for [logback](http://logback.qos.ch/).
+ - [`java.util.logging`](http://docs.oracle.com/javase/7/docs/technotes/guides/logging/index.html)
+ support is provided by the main project [raven](raven)
+ - [log4j](https://logging.apache.org/log4j/1.2/) support is provided in [raven-log4j](raven-log4j)
+ - [log4j2](https://logging.apache.org/log4j/2.x/) can be used with [raven-log4j2](raven-log4j2)
+ - [logback](http://logback.qos.ch/) support is provided in [raven-logback](raven-logback)
 
-Raven supports both HTTP(S) and UDP transport of events.
+While it's **strongly recommended to use one of the supported logging
+frameworks** to capture and send messages to Sentry, a it is possible to do so
+manually with the main project [raven](raven).
 
-
-## Sentry Protocol and supported versions
-### Sentry Protocol versions
-Since the version 3.0, Raven the versionning system is based on the
-protocol version of Sentry. This means that Raven-3.x only supports
-the version 3 of Sentry's protocol while Raven-4.x only supports
-the version 4.
-
-Sentry only supports the last two major releases of the protocol, for this
-reason, only the last two major versions of Raven are maintained.
-
-### Sentry versions
-
- - Sentry protocol v4 is not yet available (use Raven-4.x)
- - Sentry protocol v3 is available since Sentry 5.1 (use Raven-3.x)
- - Sentry protocol v2 is available since Sentry 2.0 (use Raven-2.x)
+Raven supports both HTTP(S) and UDP as transport protocols to the Sentry
+instance.
 
 
-## Build and Installation
-**See
-[INSTALL.md](https://github.com/kencochrane/raven-java/blob/master/INSTALL.md)**
+## Sentry Protocol and Raven versions
+Since 2.0, the major version of raven matches the version of the Sentry protocol.
 
+| Raven version | Sentry version | Protocol version |
+| ------------- | -------------- | ---------------- |
+| Raven 2.x     | >= 2.0         | V2               |
+| Raven 3.x     | >= 5.1         | V3               |
+| Raven 4.x(DEV)| >= 5.5(DEV)    | V4               |
+
+
+Each release of Sentry supports the last two version of the protocol
+(i.e. Sentry 5.4.5 supports both the protocol V3 and V2), for this reason, only
+the two last stable version of Raven are actively maintained.
+
+### Snapshot versions
+While the stable versions of raven are available on the
+[central Maven Repository](https://search.maven.org), newer (but less stable)
+versions (AKA snapshots) are available in Sonatype's snapshot repository.
+
+To use it with maven, add the following repository:
+
+```xml
+<repository>
+    <id>sonatype-nexus-snapshots</id>
+    <name>Sonatype Nexus Snapshots</name>
+    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    <releases>
+        <enabled>false</enabled>
+    </releases>
+    <snapshots>
+        <enabled>true</enabled>
+    </snapshots>
+</repository>
+```
+
+## Android
+
+Raven works on Android, and relies on the
+[ServiceLoader](https://developer.android.com/reference/java/util/ServiceLoader.html)
+system which uses the content of `META-INF/services`.
+This is used to declare the `RavenFactory` implementations (to allow more
+control over the automatically generated instances of `Raven`) in
+`META-INF/services/net.kencochrane.raven.RavenFactory`.
+
+Unfortunately, when the APK is build, the content of `META-INF/services` of
+the dependencies is lost, this prevent Raven to work properly.
+Solutions exist for that problem:
+
+ - Use [maven-android-plugin](https://code.google.com/p/maven-android-plugin/)
+ which has already solved this
+[problem](https://code.google.com/p/maven-android-plugin/issues/detail?id=97)
+ - Create manually a `META-INF/services/net.kencochrane.raven.RavenFactory` for
+ the project which will contain the  canonical name of of implementation of
+ `RavenFactory` (ie. `net.kencochrane.raven.DefaultRavenFactory`).
+ - Register manually the `RavenFactory` when the application starts:
+
+ ```java
+ RavenFactory.registerFactory(new DefaultRavenFactory());
+ ```
 
 ## Connection and protocol
 It is possible to send events to Sentry over different protocols, depending
@@ -91,9 +132,9 @@ option is enabled.
 ### Async connection
 In order to avoid performance issues due to a large amount of logs being
 generated or a slow connection to the Sentry server, an asynchronous connection
-is set up, using  a low priority thread pool to submit events to Sentry.
+is set up, using a low priority thread pool to submit events to Sentry.
 
-To disable the async mode, add `raven.async=false` to your DSN:
+To disable the async mode, add `raven.async=false` to the DSN:
 
     http://public:private@host:port/1?raven.async=false
 
@@ -142,7 +183,7 @@ Usually when a StackTrace is printed, the result looks like this:
 
     HighLevelException: MidLevelException: LowLevelException
             at Main.a(Main.java:13)
-            at Junk.main(Main.java:4)
+            at Main.main(Main.java:4)
     Caused by: MidLevelException: LowLevelException
             at Main.c(Main.java:23)
             at Main.b(Main.java:17)
@@ -170,13 +211,13 @@ what the problem was and will just create a longer stacktrace.
 
 Currently this is not configurable (see #49) and some packages are ignored by default:
 
-- com.sun.*
-- java.*
-- javax.*
-- org.omg.*
-- sun.*
-- junit.*
-- com.intellij.rt.*
+- `com.sun.*`
+- `java.*`
+- `javax.*`
+- `org.omg.*`
+- `sun.*`
+- `junit.*`
+- `com.intellij.rt.*`
 
 ### Compression
 By default the content sent to Sentry is compressed and encoded in base64 before
@@ -202,51 +243,3 @@ By default the connection will set up its own timeout, but it's possible to
 manually set one with `raven.timeout` (in milliseconds):
 
     http://public:private@host:port/1?raven.timeout=10000
-
-
-## History
-
-- 4.0
-    - Support of the Sentry protocol V4
-- 3.0
-    - Support of the Sentry protocol V3
-    - Rewritten
-    - Added log4j2 appender
-    - Support of JNDI
-- 2.0
-    - Version increment to reduce confusion about releases
-    - Added Logback appender (thanks to [ccouturi](https://github.com/ccouturi))
-- 1.0
-    - Rewrite
-    - Support tags
-    - Added support for JSON processors (see bundled `ServletJSONProcessor`)
-- 0.6
-    - Added support for sending messages through UDP
-- 0.5
-    - Added async support
-    - Fixed issue with parsing of path and port in DSN
-- 0.4
-    - Added the ability to get the SENTRY_DSN from the ENV
-    - Added RavenClient.captureMessage
-    - Added RavenClient.captureException
-- 0.3
-    - Added Maven support
-    - Merged with log4sentry project by Kevin Wetzels
-    - Added Proxy support
-    - Added full stack trace to logs
-
-- 0.2
-    - code refactor and cleanup
-
-- 0.1
-    - initial version
-
-## Contributors
-
-- [Ken Cochrane](https://github.com/kencochrane)
-- [Kevin Wetzels](https://github.com/roam)
-- [David Cramer](https://github.com/dcramer)
-- [Mark Philpot](https://github.com/griphiam)
-- [Brad Chen](https://github.com/vvasabi)
-- [ccouturi](https://github.com/ccouturi)
-- [Colin Hebert](https://github.com/ColinHebert)
