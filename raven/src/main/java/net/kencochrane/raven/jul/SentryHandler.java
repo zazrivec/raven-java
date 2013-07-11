@@ -113,6 +113,8 @@ public class SentryHandler extends Handler {
                 initRaven();
             Event event = buildEvent(record);
             raven.sendEvent(event);
+        } catch (Exception e) {
+            reportError("An exception occurred while creating a new event in Raven", e, ErrorManager.WRITE_FAILURE);
         } finally {
             guard = false;
         }
@@ -128,7 +130,7 @@ public class SentryHandler extends Handler {
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         } catch (Exception e) {
-            reportError("An exception occurred during the creation of a raven instance", e, ErrorManager.OPEN_FAILURE);
+            reportError("An exception occurred during the creation of a Raven instance", e, ErrorManager.OPEN_FAILURE);
         }
     }
 
@@ -209,7 +211,7 @@ public class SentryHandler extends Handler {
             if (propagateClose)
                 raven.getConnection().close();
         } catch (IOException e) {
-            reportError("An exception occurred while closing the raven connection", e, ErrorManager.CLOSE_FAILURE);
+            reportError("An exception occurred while closing the Raven connection", e, ErrorManager.CLOSE_FAILURE);
         }
     }
 }

@@ -3,6 +3,7 @@ package net.kencochrane.raven.log4j;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
+import net.kencochrane.raven.dsn.InvalidDsnException;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -24,11 +25,11 @@ public class SentryAppender extends AppenderSkeleton {
     /**
      * Name of the {@link Event#extra} property containing NDC details.
      */
-    protected static final String LOG4J_NDC = "log4J-NDC";
+    public static final String LOG4J_NDC = "log4J-NDC";
     /**
      * Name of the {@link Event#extra} property containing the Thread name.
      */
-    protected static final String THREAD_NAME = "Raven-Threadname";
+    public static final String THREAD_NAME = "Raven-Threadname";
     /**
      * Current instance of {@link Raven}.
      *
@@ -113,8 +114,11 @@ public class SentryAppender extends AppenderSkeleton {
                 dsn = Dsn.dsnLookup();
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+        } catch (InvalidDsnException e) {
+            getErrorHandler().error("An exception occurred during the retrieval of the DSN for Raven", e,
+                    ErrorCode.ADDRESS_PARSE_FAILURE);
         } catch (Exception e) {
-            getErrorHandler().error("An exception occurred during the creation of a raven instance", e,
+            getErrorHandler().error("An exception occurred during the creation of a Raven instance", e,
                     ErrorCode.FILE_OPEN_FAILURE);
         }
     }
@@ -130,6 +134,9 @@ public class SentryAppender extends AppenderSkeleton {
             guard = true;
             Event event = buildEvent(loggingEvent);
             raven.sendEvent(event);
+        } catch (Exception e) {
+            getErrorHandler().error("An exception occurred while creating a new event in Raven", e,
+                    ErrorCode.WRITE_FAILURE);
         } finally {
             guard = false;
         }
@@ -222,7 +229,7 @@ public class SentryAppender extends AppenderSkeleton {
             if (propagateClose)
                 raven.getConnection().close();
         } catch (IOException e) {
-            getErrorHandler().error("An exception occurred while closing the raven connection", e,
+            getErrorHandler().error("An exception occurred while closing the Raven connection", e,
                     ErrorCode.CLOSE_FAILURE);
         }
     }

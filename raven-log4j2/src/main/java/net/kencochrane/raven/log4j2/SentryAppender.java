@@ -36,15 +36,15 @@ public class SentryAppender extends AbstractAppender<String> {
     /**
      * Name of the {@link Event#extra} property containing NDC details.
      */
-    protected static final String LOG4J_NDC = "log4j2-NDC";
+    public static final String LOG4J_NDC = "log4j2-NDC";
     /**
      * Name of the {@link Event#extra} property containing Marker details.
      */
-    protected static final String LOG4J_MARKER = "log4j2-Marker";
+    public static final String LOG4J_MARKER = "log4j2-Marker";
     /**
      * Name of the {@link Event#extra} property containing the Thread name.
      */
-    protected static final String THREAD_NAME = "Raven-Threadname";
+    public static final String THREAD_NAME = "Raven-Threadname";
     /**
      * Current instance of {@link Raven}.
      *
@@ -182,10 +182,14 @@ public class SentryAppender extends AbstractAppender<String> {
         if (Raven.RAVEN_THREAD.get())
             return;
 
-        if (raven == null)
-            initRaven();
-        Event event = buildEvent(logEvent);
-        raven.sendEvent(event);
+        try {
+            if (raven == null)
+                initRaven();
+            Event event = buildEvent(logEvent);
+            raven.sendEvent(event);
+        } catch (Exception e) {
+            error("An exception occurred while creating a new event in Raven", logEvent, e);
+        }
     }
 
     /**
@@ -198,7 +202,7 @@ public class SentryAppender extends AbstractAppender<String> {
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         } catch (Exception e) {
-            error("An exception occurred during the creation of a raven instance", e);
+            error("An exception occurred during the creation of a Raven instance", e);
         }
     }
 
@@ -297,7 +301,7 @@ public class SentryAppender extends AbstractAppender<String> {
             if (propagateClose && raven != null)
                 raven.getConnection().close();
         } catch (IOException e) {
-            error("An exception occurred while closing the raven connection", e);
+            error("An exception occurred while closing the Raven connection", e);
         }
     }
 }

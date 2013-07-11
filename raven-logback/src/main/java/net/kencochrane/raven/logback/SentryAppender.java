@@ -26,11 +26,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     /**
      * Name of the {@link Event#extra} property containing Maker details.
      */
-    protected static final String LOGBACK_MARKER = "logback-Marker";
+    public static final String LOGBACK_MARKER = "logback-Marker";
     /**
      * Name of the {@link Event#extra} property containing the Thread name.
      */
-    protected static final String THREAD_NAME = "Raven-Threadname";
+    public static final String THREAD_NAME = "Raven-Threadname";
     /**
      * Current instance of {@link Raven}.
      *
@@ -102,25 +102,6 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     }
 
     /**
-     * Gets the position of the event as a String.
-     * <p>
-     * Allows to generate a checksum when there is no stacktrace but the position of the log can be found.
-     * </p>
-     *
-     * @param iLoggingEvent event without stacktrace but with a position.
-     * @return a string version of the position.
-     */
-    protected static String getEventPosition(ILoggingEvent iLoggingEvent) {
-        StringBuilder sb = new StringBuilder();
-        for (StackTraceElement stackTraceElement : iLoggingEvent.getCallerData()) {
-            sb.append(stackTraceElement.getClassName())
-                    .append(stackTraceElement.getMethodName())
-                    .append(stackTraceElement.getLineNumber());
-        }
-        return sb.toString();
-    }
-
-    /**
      * {@inheritDoc}
      * <p>
      * The raven instance is started in this method instead of {@link #start()} in order to avoid substitute loggers
@@ -134,10 +115,15 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         if (Raven.RAVEN_THREAD.get())
             return;
 
-        if (raven == null)
-            initRaven();
-        Event event = buildEvent(iLoggingEvent);
-        raven.sendEvent(event);
+        try {
+            if (raven == null)
+                initRaven();
+
+            Event event = buildEvent(iLoggingEvent);
+            raven.sendEvent(event);
+        } catch (Exception e) {
+            addError("An exception occurred while creating a new event in Raven", e);
+        }
     }
 
     /**
@@ -150,7 +136,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
         } catch (Exception e) {
-            addError("An exception occurred during the creation of a raven instance", e);
+            addError("An exception occurred during the creation of a Raven instance", e);
         }
     }
 
@@ -243,7 +229,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
             if (propagateClose && raven != null)
                 raven.getConnection().close();
         } catch (IOException e) {
-            addError("An exception occurred while closing the raven connection", e);
+            addError("An exception occurred while closing the Raven connection", e);
         }
     }
 }
