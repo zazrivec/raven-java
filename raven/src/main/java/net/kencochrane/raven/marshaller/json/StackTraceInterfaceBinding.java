@@ -3,16 +3,17 @@ package net.kencochrane.raven.marshaller.json;
 import com.fasterxml.jackson.core.JsonGenerator;
 import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * Binding allowing to convert a {@link StackTraceInterface} into a JSON stream.
  */
 public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceInterface> {
-    private static final Logger logger = Logger.getLogger(StackTraceInterfaceBinding.class.getCanonicalName());
+    private static final Logger logger = LoggerFactory.getLogger(StackTraceInterfaceBinding.class);
     private static final String FRAMES_PARAMETER = "frames";
     private static final String FILENAME_PARAMETER = "filename";
     private static final String FUNCTION_PARAMETER = "function";
@@ -114,7 +115,7 @@ public class StackTraceInterfaceBinding implements InterfaceBinding<StackTraceIn
             throwableStack.push(currentThrowable);
             currentThrowable = currentThrowable.getCause();
             if (dejaVu.contains(currentThrowable)) {
-                logger.warning("Exiting a circular referencing exception!");
+                logger.warn("Exiting a circular referencing exception!");
                 break;
             }
         }
