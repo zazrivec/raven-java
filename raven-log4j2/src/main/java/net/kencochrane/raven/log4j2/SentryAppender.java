@@ -3,6 +3,7 @@ package net.kencochrane.raven.log4j2;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
+import net.kencochrane.raven.dsn.InvalidDsnException;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -67,15 +68,29 @@ public class SentryAppender extends AbstractAppender<String> {
     protected String ravenFactory;
     private final boolean propagateClose;
 
+    /**
+     * Creates an instance of SentryAppender.
+     */
     public SentryAppender() {
         this(APPENDER_NAME, null, true);
     }
 
-
+    /**
+     * Creates an instance of SentryAppender.
+     *
+     * @param raven instance of Raven to use with this appender.
+     */
     public SentryAppender(Raven raven) {
         this(raven, false);
     }
 
+    /**
+     * Creates an instance of SentryAppender.
+     *
+     * @param raven          instance of Raven to use with this appender.
+     * @param propagateClose true if the {@link net.kencochrane.raven.connection.Connection#close()} should be called
+     *                       when the appender is closed.
+     */
     public SentryAppender(Raven raven, boolean propagateClose) {
         this(APPENDER_NAME, null, propagateClose);
         this.raven = raven;
@@ -137,20 +152,6 @@ public class SentryAppender extends AbstractAppender<String> {
     }
 
     /**
-     * Gets the position of the event as a String.
-     * <p>
-     * Allows to generate a checksum when there is no stacktrace but the position of the log can be found.
-     * </p>
-     *
-     * @param event event without stacktrace but with a position.
-     * @return a string version of the position.
-     */
-    protected static String getEventPosition(LogEvent event) {
-        StackTraceElement stackTraceElement = event.getSource();
-        return stackTraceElement.getClassName() + stackTraceElement.getMethodName() + stackTraceElement.getLineNumber();
-    }
-
-    /**
      * Extracts message parameters into a List of Strings.
      * <p>
      * null parameters are kept as null.
@@ -182,9 +183,10 @@ public class SentryAppender extends AbstractAppender<String> {
         if (Raven.RAVEN_THREAD.get())
             return;
 
+        if (raven == null)
+            initRaven();
+
         try {
-            if (raven == null)
-                initRaven();
             Event event = buildEvent(logEvent);
             raven.sendEvent(event);
         } catch (Exception e) {
@@ -201,6 +203,8 @@ public class SentryAppender extends AbstractAppender<String> {
                 dsn = Dsn.dsnLookup();
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+        } catch (InvalidDsnException e) {
+            error("An exception occurred during the retrieval of the DSN for Raven", e);
         } catch (Exception e) {
             error("An exception occurred during the creation of a Raven instance", e);
         }

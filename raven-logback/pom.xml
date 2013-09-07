@@ -20,10 +20,8 @@
             <artifactId>raven</artifactId>
         </dependency>
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>raven</artifactId>
-            <type>test-jar</type>
-            <scope>test</scope>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -34,20 +32,15 @@
             <artifactId>logback-classic</artifactId>
         </dependency>
 
-        <!-- Test-jar do not provide test dependencies transitively -->
+        <!-- Test dependencies -->
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
+            <groupId>com.googlecode.jmockit</groupId>
+            <artifactId>jmockit</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -60,6 +53,20 @@
             <artifactId>hamcrest-library</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- Integration tests dependencies -->
+        <!-- Raven Test-jar does not provide test dependencies transitively -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>raven</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -67,6 +74,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <logback.configurationFile>
+                            ${project.basedir}/src/test/resources/logback-integration.xml
+                        </logback.configurationFile>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -75,6 +89,10 @@
             <plugin>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

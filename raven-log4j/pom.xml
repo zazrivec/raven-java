@@ -23,31 +23,16 @@
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
         </dependency>
+
+        <!-- Tests dependencies -->
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>raven</artifactId>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <!-- Test-jar do not provide test dependencies transitively -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
+            <groupId>com.googlecode.jmockit</groupId>
+            <artifactId>jmockit</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -60,6 +45,30 @@
             <artifactId>hamcrest-library</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Integration tests dependencies -->
+        <!-- Raven Test-jar does not provide test dependencies transitively -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>raven</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -67,6 +76,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <log4j.configuration>log4j-integration.properties</log4j.configuration>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -75,6 +89,10 @@
             <plugin>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

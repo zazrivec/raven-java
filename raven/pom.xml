@@ -33,6 +33,8 @@
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
+
+        <!-- Test dependencies -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
@@ -43,14 +45,20 @@
             <artifactId>jackson-databind</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Only there to mock classes which aren't handled by jmockit such as ReentrantLock -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>com.googlecode.jmockit</groupId>
+            <artifactId>jmockit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -85,7 +93,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <java.util.logging.config.file>
-                            ${project.basedir}/src/test/resources/logging.properties
+                            ${project.basedir}/src/test/resources/logging-integration.properties
                         </java.util.logging.config.file>
                     </systemPropertyVariables>
                 </configuration>
@@ -97,6 +105,10 @@
             <plugin>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

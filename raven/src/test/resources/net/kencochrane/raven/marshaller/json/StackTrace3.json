@@ -1,0 +1,30 @@
+{"frames": [
+    {
+        "module": "",
+        "in_app": true,
+        "function": "",
+        "lineno": 0
+    },
+    {
+        "module": "",
+        "in_app": true,
+        "function": "",
+        "lineno": 0
+    },
+    {
+        "module": "Caused by: java.lang.Throwable",
+        "in_app": true
+    },
+    {
+        "module": "",
+        "in_app": true,
+        "function": "",
+        "lineno": 0
+    },
+    {
+        "module": "",
+        "in_app": true,
+        "function": "",
+        "lineno": 1
+    }
+]}

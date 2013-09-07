@@ -2,7 +2,6 @@ package net.kencochrane.raven.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.google.common.io.BaseEncoding;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import net.kencochrane.raven.marshaller.Marshaller;
@@ -19,6 +18,13 @@ import java.util.zip.DeflaterOutputStream;
 
 import static com.google.common.io.BaseEncoding.base64;
 
+/**
+ * Event marshaller using JSON to send the data.
+ * <p>
+ * The content can also be compressed with {@link DeflaterOutputStream} in which case the binary result is encoded
+ * in base 64.
+ * </p>
+ */
 public class JsonMarshaller implements Marshaller {
     /**
      * Hexadecimal string representing a uuid4 value.
@@ -238,6 +244,13 @@ public class JsonMarshaller implements Marshaller {
         return ISO_FORMAT.format(timestamp);
     }
 
+    /**
+     * Add an interface binding to send a type of {@link SentryInterface} through a JSON stream.
+     *
+     * @param sentryInterfaceClass Actual type of SentryInterface supported by the {@link InterfaceBinding}
+     * @param binding              InterfaceBinding converting SentryInterfaces of type {@code sentryInterfaceClass}.
+     * @param <T>                  Type of SentryInterface.
+     */
     public <T extends SentryInterface> void addInterfaceBinding(Class<T> sentryInterfaceClass,
                                                                 InterfaceBinding<T> binding) {
         this.interfaceBindings.put(sentryInterfaceClass, binding);

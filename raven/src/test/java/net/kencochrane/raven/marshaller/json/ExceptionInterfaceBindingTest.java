@@ -1,46 +1,39 @@
 package net.kencochrane.raven.marshaller.json;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonNode;
+import mockit.Delegate;
+import mockit.Injectable;
+import mockit.NonStrictExpectations;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
-import java.util.UUID;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.when;
-
-@RunWith(MockitoJUnitRunner.class)
-public class ExceptionInterfaceBindingTest extends AbstractInterfaceBindingTest {
+public class ExceptionInterfaceBindingTest {
     private ExceptionInterfaceBinding interfaceBinding;
-    @Mock
+    @Injectable
     private ExceptionInterface mockExceptionInterface;
 
-    @Before
+    @BeforeMethod
     public void setUp() throws Exception {
-        super.setUp();
         interfaceBinding = new ExceptionInterfaceBinding();
     }
 
     @Test
     public void testSimpleException() throws Exception {
-        String message = UUID.randomUUID().toString();
-        Throwable throwable = new IllegalStateException(message);
-        when(mockExceptionInterface.getThrowable()).thenReturn(new ImmutableThrowable(throwable));
+        final JsonComparator jsonComparator = new JsonComparator();
+        final String message = "6e65f60d-9f22-495a-9556-7a61eeea2a14";
+        final Throwable throwable = new IllegalStateException(message);
+        new NonStrictExpectations() {{
+            mockExceptionInterface.getThrowable();
+            result = new Delegate<Void>() {
+                public ImmutableThrowable getThrowable() {
+                    return new ImmutableThrowable(throwable);
+                }
+            };
+        }};
 
-        JsonGenerator jsonGenerator = getJsonGenerator();
-        interfaceBinding.writeInterface(jsonGenerator, mockExceptionInterface);
-        jsonGenerator.close();
+        interfaceBinding.writeInterface(jsonComparator.getGenerator(), mockExceptionInterface);
 
-        JsonNode rootNode = getMapper().readValue(getJsonParser(), JsonNode.class);
-        assertThat(rootNode.get("module").asText(), is(throwable.getClass().getPackage().getName()));
-        assertThat(rootNode.get("type").asText(), is(throwable.getClass().getSimpleName()));
-        assertThat(rootNode.get("value").asText(), is(message));
+        jsonComparator.assertSameAsResource("/net/kencochrane/raven/marshaller/json/Exception1.json");
     }
 }

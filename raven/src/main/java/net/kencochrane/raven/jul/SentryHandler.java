@@ -3,6 +3,7 @@ package net.kencochrane.raven.jul;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
+import net.kencochrane.raven.dsn.InvalidDsnException;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -20,6 +21,10 @@ import java.util.logging.*;
  * Logging handler in charge of sending the java.util.logging records to a Sentry server.
  */
 public class SentryHandler extends Handler {
+    /**
+     * Name of the {@link Event#extra} property containing the Thread id.
+     */
+    public static final String THREAD_ID = "Raven-Threadid";
     /**
      * Current instance of {@link Raven}.
      *
@@ -43,15 +48,30 @@ public class SentryHandler extends Handler {
     private final boolean propagateClose;
     private boolean guard = false;
 
+    /**
+     * Creates an instance of SentryHandler.
+     */
     public SentryHandler() {
         propagateClose = true;
         retrieveProperties();
     }
 
+    /**
+     * Creates an instance of SentryHandler.
+     *
+     * @param raven instance of Raven to use with this appender.
+     */
     public SentryHandler(Raven raven) {
         this(raven, false);
     }
 
+    /**
+     * Creates an instance of SentryHandler.
+     *
+     * @param raven          instance of Raven to use with this appender.
+     * @param propagateClose true if the {@link net.kencochrane.raven.connection.Connection#close()} should be called
+     *                       when the appender is closed.
+     */
     public SentryHandler(Raven raven, boolean propagateClose) {
         this.raven = raven;
         this.propagateClose = propagateClose;
@@ -129,6 +149,9 @@ public class SentryHandler extends Handler {
                 dsn = Dsn.dsnLookup();
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+        } catch (InvalidDsnException e) {
+            reportError("An exception occurred during the retrieval of the DSN for Raven",
+                    e, ErrorManager.OPEN_FAILURE);
         } catch (Exception e) {
             reportError("An exception occurred during the creation of a Raven instance", e, ErrorManager.OPEN_FAILURE);
         }
@@ -151,7 +174,8 @@ public class SentryHandler extends Handler {
             message = record.getResourceBundle().getString(record.getMessage());
         }
         if (record.getParameters() != null) {
-            eventBuilder.addSentryInterface(new MessageInterface(message, formatMessageParameters(record.getParameters())));
+            List<String> parameters = formatMessageParameters(record.getParameters());
+            eventBuilder.addSentryInterface(new MessageInterface(message, parameters));
             message = MessageFormat.format(message, record.getParameters());
         }
         eventBuilder.setMessage(message);
@@ -175,6 +199,8 @@ public class SentryHandler extends Handler {
         } else {
             eventBuilder.setCulprit(record.getLoggerName());
         }
+
+        eventBuilder.addExtra(THREAD_ID, record.getThreadID());
 
         raven.runBuilderHelpers(eventBuilder);
         return eventBuilder.build();
@@ -208,7 +234,7 @@ public class SentryHandler extends Handler {
     @Override
     public void close() throws SecurityException {
         try {
-            if (propagateClose)
+            if (propagateClose && raven != null)
                 raven.getConnection().close();
         } catch (IOException e) {
             reportError("An exception occurred while closing the Raven connection", e, ErrorManager.CLOSE_FAILURE);

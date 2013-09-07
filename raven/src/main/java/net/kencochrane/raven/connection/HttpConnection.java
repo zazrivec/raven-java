@@ -62,17 +62,31 @@ public class HttpConnection extends AbstractConnection {
      */
     private boolean bypassSecurity = false;
 
+    /**
+     * Creates an HTTP connection to a Sentry server.
+     *
+     * @param sentryUrl URL to the Sentry API.
+     * @param publicKey public key of the current project.
+     * @param secretKey private key of the current project.
+     */
     public HttpConnection(URL sentryUrl, String publicKey, String secretKey) {
         super(publicKey, secretKey);
         this.sentryUrl = sentryUrl;
     }
 
+    /**
+     * Automatically determines the URL to the HTTP API of Sentry.
+     *
+     * @param sentryUri URI of the Sentry instance.
+     * @param projectId unique identifier of the current project.
+     * @return an URL to the HTTP API of Sentry.
+     */
     public static URL getSentryApiUrl(URI sentryUri, String projectId) {
         try {
             String url = sentryUri.toString() + "api/" + projectId + "/store/";
             return new URL(url);
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("Couldn't get a valid URL from the DSN.", e);
+            throw new IllegalArgumentException("Couldn't build a valid URL from the Sentry API.", e);
         }
     }
 
@@ -104,7 +118,7 @@ public class HttpConnection extends AbstractConnection {
             connection.getInputStream().close();
         } catch (IOException e) {
             if (connection.getErrorStream() != null) {
-                logger.error(getErrorMessageFromStream(connection.getErrorStream()), e);
+                throw new ConnectionException(getErrorMessageFromStream(connection.getErrorStream()), e);
             } else {
                 throw new ConnectionException("An exception occurred while submitting the event to the sentry server."
                         , e);

@@ -10,6 +10,11 @@ public class StackTraceInterface implements SentryInterface {
     public static final String STACKTRACE_INTERFACE = "sentry.interfaces.Stacktrace";
     private final ImmutableThrowable throwable;
 
+    /**
+     * Creates a StackTrace for an {@link net.kencochrane.raven.event.Event}.
+     *
+     * @param throwable Exception containing the stacktrace.
+     */
     public StackTraceInterface(Throwable throwable) {
         this.throwable = new ImmutableThrowable(throwable);
     }

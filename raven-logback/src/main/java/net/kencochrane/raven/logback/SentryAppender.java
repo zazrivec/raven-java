@@ -7,6 +7,7 @@ import ch.qos.logback.core.AppenderBase;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
+import net.kencochrane.raven.dsn.InvalidDsnException;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -53,14 +54,29 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     protected String ravenFactory;
     private final boolean propagateClose;
 
+    /**
+     * Creates an instance of SentryAppender.
+     */
     public SentryAppender() {
         propagateClose = true;
     }
 
+    /**
+     * Creates an instance of SentryAppender.
+     *
+     * @param raven instance of Raven to use with this appender.
+     */
     public SentryAppender(Raven raven) {
         this(raven, false);
     }
 
+    /**
+     * Creates an instance of SentryAppender.
+     *
+     * @param raven          instance of Raven to use with this appender.
+     * @param propagateClose true if the {@link net.kencochrane.raven.connection.Connection#close()} should be called
+     *                       when the appender is closed.
+     */
     public SentryAppender(Raven raven, boolean propagateClose) {
         this.raven = raven;
         this.propagateClose = propagateClose;
@@ -115,10 +131,10 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         if (Raven.RAVEN_THREAD.get())
             return;
 
-        try {
-            if (raven == null)
-                initRaven();
+        if (raven == null)
+            initRaven();
 
+        try {
             Event event = buildEvent(iLoggingEvent);
             raven.sendEvent(event);
         } catch (Exception e) {
@@ -135,6 +151,8 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
                 dsn = Dsn.dsnLookup();
 
             raven = RavenFactory.ravenInstance(new Dsn(dsn), ravenFactory);
+        } catch (InvalidDsnException e) {
+            addError("An exception occurred during the retrieval of the DSN for Raven", e);
         } catch (Exception e) {
             addError("An exception occurred during the creation of a Raven instance", e);
         }

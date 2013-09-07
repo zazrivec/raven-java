@@ -1,92 +1,106 @@
 package net.kencochrane.raven.marshaller.json;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonNode;
+import mockit.Delegate;
+import mockit.Injectable;
+import mockit.Mocked;
+import mockit.NonStrictExpectations;
 import net.kencochrane.raven.event.interfaces.ImmutableThrowable;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
-import java.util.UUID;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-@RunWith(MockitoJUnitRunner.class)
-public class StackTraceInterfaceBindingTest extends AbstractInterfaceBindingTest {
+public class StackTraceInterfaceBindingTest {
     private StackTraceInterfaceBinding interfaceBinding;
-    @Mock
+    @Injectable
     private StackTraceInterface mockStackTraceInterface;
 
-    @Before
+    @BeforeMethod
     public void setUp() throws Exception {
-        super.setUp();
         interfaceBinding = new StackTraceInterfaceBinding();
     }
 
     @Test
-    public void testSingleStackFrame() throws Exception {
-        String methodName = UUID.randomUUID().toString();
-        String className = UUID.randomUUID().toString();
-        int lineNumber = 1;
-        Throwable exception = mock(Throwable.class);
-        StackTraceElement stackTraceElement = new StackTraceElement(className, methodName, null, lineNumber);
-        when(mockStackTraceInterface.getThrowable()).thenReturn(new ImmutableThrowable(exception));
-        when(exception.getStackTrace()).thenReturn(new StackTraceElement[]{stackTraceElement});
+    public void testSingleStackFrame(@Mocked final Throwable mockThrowable) throws Exception {
+        final JsonComparator jsonComparator = new JsonComparator();
+        final String methodName = "0cce55c9-478f-4386-8ede-4b6f000da3e6";
+        final String className = "31b26f01-9b97-442b-9f36-8a317f94ad76";
+        final int lineNumber = 1;
+        final StackTraceElement stackTraceElement = new StackTraceElement(className, methodName, null, lineNumber);
+        new NonStrictExpectations() {{
+            mockThrowable.getStackTrace();
+            result = new StackTraceElement[]{stackTraceElement};
+            mockStackTraceInterface.getThrowable();
+            result = new Delegate() {
+                ImmutableThrowable getThrowable() {
+                    return new ImmutableThrowable(mockThrowable);
+                }
+            };
+        }};
 
-        JsonGenerator jSonGenerator = getJsonGenerator();
-        interfaceBinding.writeInterface(jSonGenerator, mockStackTraceInterface);
-        jSonGenerator.close();
+        interfaceBinding.writeInterface(jsonComparator.getGenerator(), mockStackTraceInterface);
 
-        JsonNode frames = getMapper().readValue(getJsonParser(), JsonNode.class).get("frames");
-        assertThat(frames.size(), is(1));
-        assertThat(frames.get(0).get("module").asText(), is(className));
-        assertThat(frames.get(0).get("function").asText(), is(methodName));
-        assertThat(frames.get(0).get("lineno").asInt(), is(lineNumber));
+        jsonComparator.assertSameAsResource("/net/kencochrane/raven/marshaller/json/StackTrace1.json");
     }
 
     @Test
-    public void testFramesCommonWithEnclosing() throws Exception {
-        StackTraceElement stackTraceElement = new StackTraceElement("", "", null, 0);
-        Exception exception = new Exception();
-        exception.setStackTrace(new StackTraceElement[]{stackTraceElement, stackTraceElement});
-        Exception exception2 = new Exception(exception);
-        exception2.setStackTrace(new StackTraceElement[]{new StackTraceElement("", "", null, 1), stackTraceElement});
-        when(mockStackTraceInterface.getThrowable()).thenReturn(new ImmutableThrowable(exception2));
-
-        JsonGenerator jSonGenerator = getJsonGenerator();
+    public void testFramesCommonWithEnclosing(@Injectable final Throwable mockChildException,
+                                              @Injectable final Throwable mockParentException)
+            throws Exception {
+        final JsonComparator jsonComparator = new JsonComparator();
+        final StackTraceElement stackTraceElement = new StackTraceElement("", "", null, 0);
+        new NonStrictExpectations() {{
+            mockStackTraceInterface.getThrowable();
+            result = new Delegate() {
+                ImmutableThrowable getThrowable() {
+                    return new ImmutableThrowable(mockChildException);
+                }
+            };
+            mockChildException.getCause();
+            result = new Delegate() {
+                Throwable getThrowable() {
+                    return mockParentException;
+                }
+            };
+            mockChildException.getStackTrace();
+            result = new StackTraceElement[]{new StackTraceElement("", "", null, 1), stackTraceElement};
+            mockParentException.getStackTrace();
+            result = new StackTraceElement[]{stackTraceElement, stackTraceElement};
+        }};
         interfaceBinding.setRemoveCommonFramesWithEnclosing(true);
-        interfaceBinding.writeInterface(jSonGenerator, mockStackTraceInterface);
-        jSonGenerator.close();
 
-        JsonNode frames = getMapper().readValue(getJsonParser(), JsonNode.class).get("frames");
-        assertThat(frames.size(), is(5));
-        assertThat(frames.get(3).get("in_app").asBoolean(), is(false));
-        assertThat(frames.get(4).get("in_app").asBoolean(), is(true));
+        interfaceBinding.writeInterface(jsonComparator.getGenerator(), mockStackTraceInterface);
+
+        jsonComparator.assertSameAsResource("/net/kencochrane/raven/marshaller/json/StackTrace2.json");
     }
 
     @Test
-    public void testFramesCommonWithEnclosingDisabled() throws Exception {
-        StackTraceElement stackTraceElement = new StackTraceElement("", "", null, 0);
-        Exception exception = new Exception();
-        exception.setStackTrace(new StackTraceElement[]{stackTraceElement, stackTraceElement});
-        Exception exception2 = new Exception(exception);
-        exception2.setStackTrace(new StackTraceElement[]{new StackTraceElement("", "", null, 1), stackTraceElement});
-        when(mockStackTraceInterface.getThrowable()).thenReturn(new ImmutableThrowable(exception2));
-
-        JsonGenerator jSonGenerator = getJsonGenerator();
+    public void testFramesCommonWithEnclosingDisabled(@Injectable final Throwable mockChildException,
+                                                      @Injectable final Throwable mockParentException)
+            throws Exception {
+        final JsonComparator jsonComparator = new JsonComparator();
+        final StackTraceElement stackTraceElement = new StackTraceElement("", "", null, 0);
+        new NonStrictExpectations() {{
+            mockStackTraceInterface.getThrowable();
+            result = new Delegate() {
+                ImmutableThrowable getThrowable() {
+                    return new ImmutableThrowable(mockChildException);
+                }
+            };
+            mockChildException.getCause();
+            result = new Delegate() {
+                Throwable getThrowable() {
+                    return mockParentException;
+                }
+            };
+            mockChildException.getStackTrace();
+            result = new StackTraceElement[]{new StackTraceElement("", "", null, 1), stackTraceElement};
+            mockParentException.getStackTrace();
+            result = new StackTraceElement[]{stackTraceElement, stackTraceElement};
+        }};
         interfaceBinding.setRemoveCommonFramesWithEnclosing(false);
-        interfaceBinding.writeInterface(jSonGenerator, mockStackTraceInterface);
-        jSonGenerator.close();
 
-        JsonNode frames = getMapper().readValue(getJsonParser(), JsonNode.class).get("frames");
-        assertThat(frames.size(), is(5));
-        assertThat(frames.get(3).get("in_app").asBoolean(), is(true));
-        assertThat(frames.get(4).get("in_app").asBoolean(), is(true));
+        interfaceBinding.writeInterface(jsonComparator.getGenerator(), mockStackTraceInterface);
+
+        jsonComparator.assertSameAsResource("/net/kencochrane/raven/marshaller/json/StackTrace3.json");
     }
 }
