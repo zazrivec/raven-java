@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.ResourceBundle;
 import java.util.Set;
 
 /**
@@ -35,7 +36,7 @@ public class Raven {
      * Version of this client, the major version is the current supported Sentry protocol, the minor version changes
      * for each release of this project.
      */
-    public static final String NAME = "Raven-Java/3.0";
+    public static final String NAME = ResourceBundle.getBundle("raven-build").getString("build.name");
     private static final Logger logger = LoggerFactory.getLogger(Raven.class);
     private final Set<EventBuilderHelper> builderHelpers = new HashSet<EventBuilderHelper>();
     private Connection connection;

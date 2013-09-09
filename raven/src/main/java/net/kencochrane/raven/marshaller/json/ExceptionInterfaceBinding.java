@@ -13,6 +13,7 @@ public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInte
     private static final String TYPE_PARAMETER = "type";
     private static final String VALUE_PARAMETER = "value";
     private static final String MODULE_PARAMETER = "module";
+    private static final String DEFAULT_PACKAGE_NAME = "(default)";
 
     @Override
     public void writeInterface(JsonGenerator generator, ExceptionInterface exceptionInterface) throws IOException {
@@ -21,7 +22,8 @@ public class ExceptionInterfaceBinding implements InterfaceBinding<ExceptionInte
         generator.writeStartObject();
         generator.writeStringField(TYPE_PARAMETER, throwable.getActualClass().getSimpleName());
         generator.writeStringField(VALUE_PARAMETER, throwable.getMessage());
-        generator.writeStringField(MODULE_PARAMETER, throwable.getActualClass().getPackage().getName());
+        Package aPackage = throwable.getActualClass().getPackage();
+        generator.writeStringField(MODULE_PARAMETER, (aPackage != null) ? aPackage.getName() : DEFAULT_PACKAGE_NAME);
         generator.writeEndObject();
     }
 }
