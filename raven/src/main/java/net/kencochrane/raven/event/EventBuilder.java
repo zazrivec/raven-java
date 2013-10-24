@@ -24,11 +24,15 @@ public class EventBuilder {
      */
     public static final String DEFAULT_PLATFORM = "java";
     /**
+     * Default hostname if it isn't set manually (or can't be determined).
+     */
+    public static final String DEFAULT_HOSTNAME = "unavailable";
+    /**
      * Duration of the hostname caching.
      *
      * @see HostnameCache
      */
-    public static final int HOSTNAME_CACHE_DURATION = 18000000;
+    public static final long HOSTNAME_CACHE_DURATION = TimeUnit.HOURS.toMillis(5);
     private static final HostnameCache HOSTNAME_CACHE = new HostnameCache(HOSTNAME_CACHE_DURATION);
     private final Event event;
     private boolean alreadyBuilt = false;
@@ -299,13 +303,9 @@ public class EventBuilder {
      */
     private static final class HostnameCache {
         /**
-         * Default hostname if it isn't set manually (or can't be determined).
-         */
-        public static final String DEFAULT_HOSTNAME = "unavailable";
-        /**
          * Time before the get hostname operation times out (in ms).
          */
-        public static final int GET_HOSTNAME_TIMEOUT = 1000;
+        public static final long GET_HOSTNAME_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
         private static final Logger logger = LoggerFactory.getLogger(HostnameCache.class);
         /**
          * Time for which the cache is kept.
