@@ -2,6 +2,7 @@ package net.kencochrane.raven.marshaller.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.google.common.base.Charsets;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import net.kencochrane.raven.marshaller.Marshaller;
@@ -81,7 +82,7 @@ public class JsonMarshaller implements Marshaller {
     /**
      * Date format for ISO 8601.
      */
-    private static final DateFormat ISO_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+    private static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
     private static final Logger logger = LoggerFactory.getLogger(JsonMarshaller.class);
     private final JsonFactory jsonFactory = new JsonFactory();
     private final Map<Class<? extends SentryInterface>, InterfaceBinding> interfaceBindings =
@@ -91,17 +92,14 @@ public class JsonMarshaller implements Marshaller {
      */
     private boolean compression = true;
 
-    static {
-        ISO_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
-    }
-
     @Override
     public void marshall(Event event, OutputStream destination) {
         // Prevent the stream from being closed automatically
         destination = new UncloseableOutputStream(destination);
 
         if (compression)
-            destination = new DeflaterOutputStream(base64().encodingStream(new OutputStreamWriter(destination)));
+            destination = new DeflaterOutputStream(base64().encodingStream(
+                    new OutputStreamWriter(destination, Charsets.UTF_8)));
 
         JsonGenerator generator = null;
         try {
@@ -241,7 +239,9 @@ public class JsonMarshaller implements Marshaller {
      * @return timestamp as a formatted String.
      */
     private String formatTimestamp(Date timestamp) {
-        return ISO_FORMAT.format(timestamp);
+        DateFormat isoFormat = new SimpleDateFormat(ISO_8601_FORMAT);
+        isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return isoFormat.format(timestamp);
     }
 
     /**

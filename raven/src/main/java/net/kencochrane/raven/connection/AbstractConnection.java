@@ -5,6 +5,7 @@ import net.kencochrane.raven.event.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -21,17 +22,16 @@ public abstract class AbstractConnection implements Connection {
      */
     public static final String SENTRY_PROTOCOL_VERSION = "3";
     /**
-     * Default maximum duration for a lockdown (5 minutes).
+     * Default maximum duration for a lockdown.
      */
-    public static final int DEFAULT_MAX_WAITING_TIME = 300000;
+    public static final long DEFAULT_MAX_WAITING_TIME = TimeUnit.MINUTES.toMillis(5);
     /**
-     * Default base duration for a lockdown (10 milliseconds).
+     * Default base duration for a lockdown.
      */
-    public static final int DEFAULT_BASE_WAITING_TIME = 10;
+    public static final long DEFAULT_BASE_WAITING_TIME = TimeUnit.MILLISECONDS.toMillis(10);
     private static final Logger logger = LoggerFactory.getLogger(AbstractConnection.class);
-    private final String publicKey;
-    private final String secretKey;
     private final ReentrantLock lock = new ReentrantLock();
+    private final String authHeader;
     /**
      * Maximum duration for a lockdown.
      */
@@ -52,8 +52,10 @@ public abstract class AbstractConnection implements Connection {
      * @param secretKey secret key (password) to the Sentry server.
      */
     protected AbstractConnection(String publicKey, String secretKey) {
-        this.publicKey = publicKey;
-        this.secretKey = secretKey;
+        authHeader = "Sentry sentry_version=" + SENTRY_PROTOCOL_VERSION + ","
+                + "sentry_client=" + Raven.NAME + ","
+                + "sentry_key=" + publicKey + ","
+                + "sentry_secret=" + secretKey;
     }
 
     /**
@@ -62,12 +64,7 @@ public abstract class AbstractConnection implements Connection {
      * @return an authentication header as a String.
      */
     protected String getAuthHeader() {
-        StringBuilder header = new StringBuilder();
-        header.append("Sentry sentry_version=").append(SENTRY_PROTOCOL_VERSION);
-        header.append(",sentry_client=").append(Raven.NAME);
-        header.append(",sentry_key=").append(publicKey);
-        header.append(",sentry_secret=").append(secretKey);
-        return header.toString();
+        return authHeader;
     }
 
     @Override

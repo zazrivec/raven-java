@@ -1,5 +1,6 @@
 package net.kencochrane.raven.event;
 
+import com.google.common.base.Charsets;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,10 +64,10 @@ public class EventBuilder {
      * @return a checksum allowing two events with the same properties to be grouped later.
      */
     private static String calculateChecksum(String string) {
-        byte[] bytes = string.getBytes();
+        byte[] bytes = string.getBytes(Charsets.UTF_8);
         Checksum checksum = new CRC32();
         checksum.update(bytes, 0, bytes.length);
-        return String.valueOf(checksum.getValue());
+        return Long.toHexString(checksum.getValue()).toUpperCase();
     }
 
     /**
@@ -279,7 +280,7 @@ public class EventBuilder {
      *
      * @return an immutable event.
      */
-    public Event build() {
+    public synchronized Event build() {
         if (alreadyBuilt)
             throw new IllegalStateException("A message can't be built twice");
 
@@ -349,14 +350,14 @@ public class EventBuilder {
          * Force an update of the cache to get the current value of the hostname.
          */
         public void updateCache() {
-            expirationTimestamp = System.currentTimeMillis() + cacheDuration;
             Future<String> future = Executors.newSingleThreadExecutor().submit(new HostRetriever());
 
             try {
                 hostname = future.get(GET_HOSTNAME_TIMEOUT, TimeUnit.MILLISECONDS);
+                expirationTimestamp = System.currentTimeMillis() + cacheDuration;
             } catch (Exception e) {
-                logger.warn("Localhost hostname lookup failed, defaulting back to '{}'", DEFAULT_HOSTNAME, e);
-                hostname = DEFAULT_HOSTNAME;
+                expirationTimestamp = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(1);
+                logger.warn("Localhost hostname lookup failed, keeping the value '{}'", hostname, e);
             }
         }
 

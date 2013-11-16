@@ -212,7 +212,7 @@ public class DefaultRavenFactory extends RavenFactory {
     /**
      * Provides a list of package names to consider as "not in-app".
      * <p>
-     * Those packages will be used with the {@inheritDoc StackTraceInterface} to hide frames that aren't a part of
+     * Those packages will be used with the {@link StackTraceInterface} to hide frames that aren't a part of
      * the main application.
      * </p>
      *
@@ -235,6 +235,7 @@ public class DefaultRavenFactory extends RavenFactory {
      * down the main application.
      * </p>
      */
+    @SuppressWarnings("PMD.AvoidThreadGroup")
     protected static final class DaemonThreadFactory implements ThreadFactory {
         private static final AtomicInteger POOL_NUMBER = new AtomicInteger(1);
         private final ThreadGroup group;

@@ -1,5 +1,6 @@
 package net.kencochrane.raven.connection;
 
+import com.google.common.base.Charsets;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.marshaller.Marshaller;
@@ -14,6 +15,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Basic connection to a Sentry server, using HTTP and HTTPS.
@@ -34,7 +36,7 @@ public class HttpConnection extends AbstractConnection {
     /**
      * Default timeout of an HTTP connection to Sentry.
      */
-    private static final int DEFAULT_TIMEOUT = 10000;
+    private static final int DEFAULT_TIMEOUT = (int) TimeUnit.SECONDS.toMillis(1);
     /**
      * HostnameVerifier allowing wildcard certificates to work without adding them to the truststore.
      */
@@ -90,7 +92,12 @@ public class HttpConnection extends AbstractConnection {
         }
     }
 
-    private HttpURLConnection getConnection() {
+    /**
+     * Opens a connection to the Sentry API allowing to send new events.
+     *
+     * @return an HTTP connection to Sentry.
+     */
+    protected HttpURLConnection getConnection() {
         try {
             HttpURLConnection connection = (HttpURLConnection) sentryUrl.openConnection();
             if (bypassSecurity && connection instanceof HttpsURLConnection) {
@@ -129,7 +136,7 @@ public class HttpConnection extends AbstractConnection {
     }
 
     private String getErrorMessageFromStream(InputStream errorStream) {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream, Charsets.UTF_8));
         StringBuilder sb = new StringBuilder();
         try {
             String line;

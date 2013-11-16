@@ -23,7 +23,7 @@ public class AsyncConnection implements Connection {
     /**
      * Timeout of the {@link #executorService}.
      */
-    private static final int SHUTDOWN_TIMEOUT = 1000;
+    private static final long SHUTDOWN_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
     /**
      * Connection used to actually send the events.
      */
@@ -74,6 +74,7 @@ public class AsyncConnection implements Connection {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
                 try {
+                    // The current thread is managed by raven
                     Raven.RAVEN_THREAD.set(true);
                     AsyncConnection.this.close();
                 } catch (IOException e) {
@@ -146,7 +147,7 @@ public class AsyncConnection implements Connection {
         @Override
         public void run() {
             try {
-                // The current thread is spawned by raven
+                // The current thread is managed by raven
                 Raven.RAVEN_THREAD.set(true);
                 actualConnection.send(event);
             } catch (Exception e) {
