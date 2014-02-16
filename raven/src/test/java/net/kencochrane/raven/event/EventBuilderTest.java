@@ -22,13 +22,17 @@ public class EventBuilderTest {
     private InetAddress mockLocalHost;
 
     private static void resetHostnameCache() {
-        setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "expirationTimestamp", 0l);
-        setField(getField(EventBuilder.class, "HOSTNAME_CACHE"), "hostname", EventBuilder.DEFAULT_HOSTNAME);
+        setField(getHostnameCache(), "expirationTimestamp", 0l);
+        setField(getHostnameCache(), "hostname", EventBuilder.DEFAULT_HOSTNAME);
+    }
+
+    private static Object getHostnameCache() {
+        return getField(EventBuilder.class, "HOSTNAME_CACHE");
     }
 
     @BeforeMethod
     public void setUp() throws Exception {
-        new NonStrictExpectations(InetAddress.class){{
+        new NonStrictExpectations(InetAddress.class) {{
             InetAddress.getLocalHost();
             result = mockLocalHost;
             mockLocalHost.getCanonicalHostName();
@@ -62,7 +66,7 @@ public class EventBuilderTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void builtEventWithCustomNullUuidFails() throws Exception {
-        final EventBuilder eventBuilder = new EventBuilder(null);
+        new EventBuilder(null);
     }
 
     @Test
@@ -410,7 +414,7 @@ public class EventBuilderTest {
             @Injectable("sentryInterfaceName") final String mockSentryInterfaceName,
             @Injectable final SentryInterface mockSentryInterface)
             throws Exception {
-        new NonStrictExpectations(){{
+        new NonStrictExpectations() {{
             mockSentryInterface.getInterfaceName();
             result = mockSentryInterfaceName;
         }};
