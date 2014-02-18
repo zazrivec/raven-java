@@ -1,6 +1,5 @@
 package net.kencochrane.raven.event;
 
-import mockit.Delegate;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import net.kencochrane.raven.event.interfaces.SentryInterface;
@@ -254,28 +253,16 @@ public class EventBuilderTest {
         assertThat(event.getTags().entrySet(), hasSize(1));
     }
 
-    @Test(timeOut = 5000)
+    @Test
     public void builtEventWithNoServerNameUsesDefaultIfSearchTimesOut()
             throws Exception {
         resetHostnameCache();
-        new NonStrictExpectations(InetAddress.class) {
-            @Injectable
-            private InetAddress mockTimingOutLocalHost;
-
-            {
-                InetAddress.getLocalHost();
-                result = mockTimingOutLocalHost;
-                mockTimingOutLocalHost.getCanonicalHostName();
-                result = new Delegate() {
-                    public String getCanonicalHostName() throws Exception {
-                        synchronized (EventBuilderTest.this) {
-                            EventBuilderTest.this.wait();
-                        }
-                        return "";
-                    }
-                };
-            }
-        };
+        new NonStrictExpectations(InetAddress.class) {{
+            InetAddress.getLocalHost();
+            result = mockLocalHost;
+            mockLocalHost.getCanonicalHostName();
+            result = new RuntimeException("For all intents and purposes, an exception is the same as a timeout");
+        }};
         final EventBuilder eventBuilder = new EventBuilder();
 
         final Event event = eventBuilder.build();
@@ -290,17 +277,12 @@ public class EventBuilderTest {
     public void builtEventWithNoServerNameUsesLocalHost(@Injectable("serverName") final String mockServerName)
             throws Exception {
         resetHostnameCache();
-        new NonStrictExpectations(InetAddress.class) {
-            @Injectable
-            private InetAddress mockLocalHost;
-
-            {
-                InetAddress.getLocalHost();
-                result = mockLocalHost;
-                mockLocalHost.getCanonicalHostName();
-                result = mockServerName;
-            }
-        };
+        new NonStrictExpectations(InetAddress.class) {{
+            InetAddress.getLocalHost();
+            result = mockLocalHost;
+            mockLocalHost.getCanonicalHostName();
+            result = mockServerName;
+        }};
         final EventBuilder eventBuilder = new EventBuilder();
 
         final Event event = eventBuilder.build();
