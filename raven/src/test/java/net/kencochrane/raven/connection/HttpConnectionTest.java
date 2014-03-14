@@ -1,9 +1,6 @@
 package net.kencochrane.raven.connection;
 
-import mockit.Expectations;
-import mockit.Injectable;
-import mockit.NonStrictExpectations;
-import mockit.Verifications;
+import mockit.*;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.marshaller.Marshaller;
@@ -19,14 +16,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
-import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class HttpConnectionTest {
-    private final String publicKey = UUID.randomUUID().toString();
-    private final String secretKey = UUID.randomUUID().toString();
+    @Injectable
+    private final String publicKey = "6cc48e8f-380c-44cc-986b-f566247a2af5";
+    @Injectable
+    private final String secretKey = "e30cca23-3f97-470b-a8c2-e29b33dd25e0";
+    @Tested
     private HttpConnection httpConnection;
     @Injectable
     private HttpsURLConnection mockUrlConnection;
@@ -41,6 +40,7 @@ public class HttpConnectionTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
+        httpConnection = null;
         new NonStrictExpectations() {{
             mockUrl.openConnection();
             result = mockUrlConnection;
@@ -48,9 +48,6 @@ public class HttpConnectionTest {
             result = mockOutputStream;
             mockUrlConnection.getInputStream();
             result = mockInputStream;
-
-            httpConnection = new HttpConnection(mockUrl, publicKey, secretKey);
-            httpConnection.setMarshaller(mockMarshaller);
         }};
     }
 
@@ -119,18 +116,13 @@ public class HttpConnectionTest {
 
         new Verifications() {{
             mockUrlConnection.setRequestProperty("User-Agent", Raven.NAME);
-
-            String expectedAuthRequest = "Sentry sentry_version=4,"
-                    + "sentry_client=" + Raven.NAME + ","
-                    + "sentry_key=" + publicKey + ","
-                    + "sentry_secret=" + secretKey;
-            mockUrlConnection.setRequestProperty("X-Sentry-Auth", expectedAuthRequest);
+            mockUrlConnection.setRequestProperty("X-Sentry-Auth", httpConnection.getAuthHeader());
         }};
     }
 
     @Test(expectedExceptions = {ConnectionException.class})
     public void testHttpErrorThrowsAnException(@Injectable final Event mockEvent) throws Exception {
-        final String httpErrorMessage = UUID.randomUUID().toString();
+        final String httpErrorMessage = "93e3ddb1-c4f3-46c3-9900-529de83678b7";
         new NonStrictExpectations() {{
             mockUrlConnection.getOutputStream();
             result = new IOException();
@@ -144,10 +136,10 @@ public class HttpConnectionTest {
     @Test
     public void testApiUrlCreation(@Injectable final URI sentryUri) throws Exception {
         final String uri = "http://host/sentry/";
-        final String projectId = UUID.randomUUID().toString();
+        final String projectId = "293b4958-71f8-40a9-b588-96f004f64463";
         new Expectations() {{
             sentryUri.toString();
-            result = "http://host/sentry/";
+            result = uri;
         }};
 
         URL sentryApiUrl = HttpConnection.getSentryApiUrl(sentryUri, projectId);

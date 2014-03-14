@@ -16,8 +16,6 @@ import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 import net.kencochrane.raven.event.interfaces.SentryException;
 import net.kencochrane.raven.event.interfaces.StackTraceInterface;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -35,7 +33,6 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * Name of the {@link Event#extra} property containing the Thread name.
      */
     public static final String THREAD_NAME = "Raven-Threadname";
-    private static final Logger logger = LoggerFactory.getLogger(SentryAppender.class);
     /**
      * Current instance of {@link Raven}.
      *
@@ -125,11 +122,11 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
         // Do not log the event if the current thread is managed by raven
-        if (Raven.RAVEN_THREAD.get())
+        if (Raven.isManagingThread())
             return;
 
         try {
-            Raven.RAVEN_THREAD.set(true);
+            Raven.startManagingThread();
 
             if (raven == null)
                 initRaven();
@@ -139,7 +136,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         } catch (Exception e) {
             addError("An exception occurred while creating a new event in Raven", e);
         } finally {
-            Raven.RAVEN_THREAD.remove();
+            Raven.stopManagingThread();
         }
     }
 
@@ -217,7 +214,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
         //Stack the exceptions to send them in the reverse order
         while (throwableProxy != null) {
             if (!circularityDetector.add(throwableProxy)) {
-                logger.warn("Exiting a circular exception!");
+                addWarn("Exiting a circular exception!");
                 break;
             }
 

@@ -81,8 +81,8 @@ public class Dsn {
             // Check that JNDI is available (not available on Android) by loading InitialContext
             Class.forName("javax.naming.InitialContext", false, Dsn.class.getClassLoader());
             dsn = JndiLookup.jndiLookup();
-        } catch (ClassNotFoundException e) {
-            logger.trace("JNDI not available");
+        } catch (ClassNotFoundException | NoClassDefFoundError e) {
+            logger.debug("JNDI not available");
         }
 
         // Try to obtain the DSN from a System Environment Variable
