@@ -4,7 +4,7 @@
     <parent>
         <groupId>net.kencochrane.raven</groupId>
         <artifactId>raven-all</artifactId>
-        <version>4.2</version>
+        <version>4.2.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>raven-appengine</artifactId>
