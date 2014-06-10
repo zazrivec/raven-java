@@ -6,7 +6,6 @@ import mockit.NonStrictExpectations;
 import org.testng.annotations.Test;
 
 import java.util.Deque;
-import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -17,8 +16,8 @@ public class SentryExceptionTest {
 
     @Test
     public void ensureConversionToQueueKeepsOrder(@Injectable final Throwable mockCause) throws Exception {
-        final String exceptionMessage = UUID.randomUUID().toString();
-        final String causeMessage = UUID.randomUUID().toString();
+        final String exceptionMessage = "208ea34a-9c99-42d6-a399-59a4c85900dc";
+        final String causeMessage = "46a1b2ee-629b-49eb-a2be-f5250c995ea4";
         new NonStrictExpectations() {{
             mockThrowable.getCause();
             result = new Delegate<Throwable>() {
