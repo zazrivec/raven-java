@@ -21,8 +21,8 @@ Details in the [central Maven repository](https://search.maven.org/#artifactdeta
 Relies on:
 
  - [raven dependencies](../raven)
- - [logback-core-1.0.13.jar](https://search.maven.org/#artifactdetails%7Cch.qos.logback%7Clogback-core%7C1.0.13%7Cjar)
- - [logback-classic-1.0.13.jar](https://search.maven.org/#artifactdetails%7Cch.qos.logback%7Clogback-classic%7C1.0.13%7Cjar)
+ - [logback-core-1.1.2.jar](https://search.maven.org/#artifactdetails%7Cch.qos.logback%7Clogback-core%7C1.1.2%7Cjar)
+ - [logback-classic-1.1.2.jar](https://search.maven.org/#artifactdetails%7Cch.qos.logback%7Clogback-classic%7C1.1.2%7Cjar)
  will act as the implementation of slf4j (instead of slf4j-jdk14).
 
 ## Usage
@@ -47,7 +47,7 @@ In the `logback.xml` file set:
 It's possible to add extra details to events captured by the logback module
 thanks to the [marker system](http://www.slf4j.org/faq.html#fatal) which will
 add a tag `logback-Marker`.
-[The MDC system provided by Log4j 2](http://logback.qos.ch/manual/mdc.html)
+[The MDC system provided by logback](http://logback.qos.ch/manual/mdc.html)
 allows to add extra information to the event.
 
 ### In practice
