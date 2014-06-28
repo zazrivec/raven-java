@@ -10,17 +10,16 @@ for `java.util.logging`.
 <dependency>
     <groupId>net.kencochrane.raven</groupId>
     <artifactId>raven</artifactId>
-    <version>4.1.2</version>
+    <version>4.2</version>
 </dependency>
 ```
 
 ### Other dependency managers
-Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven%7C4.1.2%7Cjar).
+Details in the [central Maven repository](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven%7C4.2%7Cjar).
 
 ### Manual dependency management
 Relies on:
 
- - [raven-5.0.jar](https://search.maven.org/#artifactdetails%7Cnet.kencochrane.raven%7Craven%7C5.0%7Cjar)
  - [guava-17.0.jar](https://search.maven.org/#artifactdetails%7Ccom.google.guava%7Cguava%7C17.0%7Cjar)
  - [jackson-core-2.4.0.jar](https://search.maven.org/#artifactdetails%7Ccom.fasterxml.jackson.core%7Cjackson-core%7C2.4.0%7Cjar)
  - [slf4j-api-1.7.7.jar](https://search.maven.org/#artifactdetails%7Corg.slf4j%7Cslf4j-api%7C1.7.7%7Cjar)
