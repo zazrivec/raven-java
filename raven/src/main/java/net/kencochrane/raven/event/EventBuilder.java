@@ -291,6 +291,14 @@ public class EventBuilder {
         return event;
     }
 
+    @Override
+    public String toString() {
+        return "EventBuilder{"
+                + "event=" + event
+                + ", alreadyBuilt=" + alreadyBuilt
+                + '}';
+    }
+
     /**
      * Time sensitive cache in charge of keeping track of the hostname.
      * <p>

@@ -15,7 +15,7 @@ import static org.hamcrest.Matchers.instanceOf;
 
 public class RavenServletContainerInitializerTest {
     @Tested
-    private RavenServletContainerInitializer ravenServletContainerInitializer;
+    private RavenServletContainerInitializer ravenServletContainerInitializer = null;
 
     @Test
     public void testInitializerInjectedViaServiceLoader() throws Exception {
@@ -24,10 +24,10 @@ public class RavenServletContainerInitializerTest {
     }
 
     @Test
-    public void testFilterAddedToServletContext(@Injectable final ServletContext mockServletContext) throws Exception{
+    public void testFilterAddedToServletContext(@Injectable final ServletContext mockServletContext) throws Exception {
         ravenServletContainerInitializer.onStartup(null, mockServletContext);
 
-        new Verifications(){{
+        new Verifications() {{
             mockServletContext.addListener(RavenServletRequestListener.class);
         }};
     }

@@ -3,7 +3,6 @@ package net.kencochrane.raven.connection;
 import mockit.*;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.marshaller.Marshaller;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.OutputStream;
@@ -22,16 +21,11 @@ public class UdpConnectionTest {
     @Injectable
     private final String secretKey = "1de38091-6e8c-42df-8298-cf7f8098617a";
     @Tested
-    private UdpConnection udpConnection;
+    private UdpConnection udpConnection = null;
     @Injectable
-    private Marshaller mockMarshaller;
+    private Marshaller mockMarshaller = null;
     @Mocked
-    private DatagramSocket mockDatagramSocket;
-
-    @BeforeMethod
-    public void setUp() throws Exception {
-        udpConnection = null;
-    }
+    private DatagramSocket mockDatagramSocket = null;
 
     @Test
     public void testConnectionWorkingWithProperHost(@Injectable("customHostname") final String mockHostname,

@@ -3,7 +3,6 @@ package net.kencochrane.raven.connection;
 import mockit.*;
 import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.event.Event;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -12,15 +11,16 @@ import java.util.concurrent.TimeUnit;
 
 public class AsyncConnectionTest {
     @Tested
-    private AsyncConnection asyncConnection;
+    private AsyncConnection asyncConnection = null;
     @Injectable
-    private Connection mockConnection;
+    private Connection mockConnection = null;
     @Injectable
-    private ExecutorService mockExecutorService;
+    private ExecutorService mockExecutorService = null;
     @Injectable("false")
-    private boolean gracefulShutdown;
+    private boolean mockGracefulShutdown = false;
+    @SuppressWarnings("unused")
     @Mocked("addShutdownHook")
-    private Runtime mockRuntime;
+    private Runtime mockRuntime = null;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -57,7 +57,8 @@ public class AsyncConnectionTest {
 
     @Test
     public void verifyShutdownHookSetManagedByRavenAndCloseConnection(
-            @Mocked({"startManagingThread", "stopManagingThread"}) Raven mockRaven) throws Exception {
+            @SuppressWarnings("unused") @Mocked({"startManagingThread", "stopManagingThread"}) Raven mockRaven)
+            throws Exception {
         // Ensure that the shutdown hooks for the unused @Tested instance are removed
         asyncConnection.close();
 
@@ -81,7 +82,8 @@ public class AsyncConnectionTest {
 
     @Test
     public void ensureFailingShutdownHookStopsBeingManaged(
-            @Mocked({"startManagingThread", "stopManagingThread"}) Raven mockRaven) throws Exception {
+            @SuppressWarnings("unused") @Mocked({"startManagingThread", "stopManagingThread"}) Raven mockRaven)
+            throws Exception {
         // Ensure that the shutdown hooks for the unused @Tested instance are removed
         asyncConnection.close();
 

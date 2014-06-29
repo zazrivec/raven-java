@@ -10,7 +10,6 @@ import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import net.kencochrane.raven.event.interfaces.MessageInterface;
 
-import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.*;
@@ -103,9 +102,10 @@ public class SentryHandler extends Handler {
      */
     protected void retrieveProperties() {
         LogManager manager = LogManager.getLogManager();
-        dsn = manager.getProperty(SentryHandler.class.getName() + ".dsn");
-        ravenFactory = manager.getProperty(SentryHandler.class.getName() + ".ravenFactory");
-        String tagsProperty = manager.getProperty(SentryHandler.class.getName() + ".tags");
+        String className = SentryHandler.class.getName();
+        dsn = manager.getProperty(className + ".dsn");
+        ravenFactory = manager.getProperty(className + ".ravenFactory");
+        String tagsProperty = manager.getProperty(className + ".tags");
         if (tagsProperty != null)
             tags = Splitter.on(",").withKeyValueSeparator(":").split(tagsProperty);
     }
@@ -197,10 +197,13 @@ public class SentryHandler extends Handler {
     @Override
     public void close() throws SecurityException {
         try {
+            Raven.startManagingThread();
             if (raven != null)
-                raven.getConnection().close();
-        } catch (IOException e) {
+                raven.closeConnection();
+        } catch (Exception e) {
             reportError("An exception occurred while closing the Raven connection", e, ErrorManager.CLOSE_FAILURE);
+        } finally {
+            Raven.stopManagingThread();
         }
     }
 }

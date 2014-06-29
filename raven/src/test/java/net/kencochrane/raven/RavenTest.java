@@ -1,33 +1,52 @@
 package net.kencochrane.raven;
 
 import mockit.Injectable;
+import mockit.NonStrictExpectations;
+import mockit.Tested;
 import mockit.Verifications;
 import net.kencochrane.raven.connection.Connection;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.helper.EventBuilderHelper;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
-import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static mockit.Deencapsulation.getField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 public class RavenTest {
-    private Raven raven;
+    @Tested
+    private Raven raven = null;
     @Injectable
-    private Connection mockConnection;
+    private Connection mockConnection = null;
     @Injectable
-    private Event mockEvent;
+    private Event mockEvent = null;
 
-    @BeforeMethod
-    public void setUp() throws Exception {
-        raven = new Raven();
-        raven.setConnection(mockConnection);
+    @AfterMethod
+    public void tearDown() throws Exception {
+        ThreadLocal<AtomicInteger> ravenThread = getField(Raven.class, "RAVEN_THREAD");
+        ravenThread.remove();
     }
 
     @Test
     public void testSendEvent() throws Exception {
+        raven.sendEvent(mockEvent);
+
+        new Verifications() {{
+            mockConnection.send(mockEvent);
+        }};
+    }
+
+    @Test
+    public void testSendEventFailingIsCaught() throws Exception {
+        new NonStrictExpectations() {{
+            mockConnection.send((Event) any);
+            result = new RuntimeException();
+        }};
         raven.sendEvent(mockEvent);
 
         new Verifications() {{
@@ -103,5 +122,53 @@ public class RavenTest {
         new Verifications() {{
             mockBuilderHelper.helpBuildingEvent(mockEventBuilder);
         }};
+    }
+
+    @Test
+    public void testThreadNotManagedByDefault() throws Exception {
+        assertThat(Raven.isManagingThread(), is(false));
+    }
+
+    @Test
+    public void testStartManagingThreadWorks() throws Exception {
+        Raven.startManagingThread();
+
+        assertThat(Raven.isManagingThread(), is(true));
+    }
+
+    @Test
+    public void testStartManagingAlreadyManagedThreadWorks() throws Exception {
+        Raven.startManagingThread();
+
+        Raven.startManagingThread();
+
+        assertThat(Raven.isManagingThread(), is(true));
+    }
+
+    @Test
+    public void testStopManagingThreadWorks() throws Exception {
+        Raven.startManagingThread();
+
+        Raven.stopManagingThread();
+
+        assertThat(Raven.isManagingThread(), is(false));
+    }
+
+    @Test
+    public void testStopManagingNonManagedThreadWorks() throws Exception {
+        Raven.stopManagingThread();
+
+        assertThat(Raven.isManagingThread(), is(false));
+    }
+
+    @Test
+    public void testThreadManagedTwiceNeedsToBeUnmanagedTwice() throws Exception {
+        Raven.startManagingThread();
+        Raven.startManagingThread();
+
+        Raven.stopManagingThread();
+        assertThat(Raven.isManagingThread(), is(true));
+        Raven.stopManagingThread();
+        assertThat(Raven.isManagingThread(), is(false));
     }
 }

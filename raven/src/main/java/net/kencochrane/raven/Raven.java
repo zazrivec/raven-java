@@ -8,10 +8,12 @@ import net.kencochrane.raven.event.interfaces.ExceptionInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Raven is a client for Sentry allowing to send an {@link Event} that will be processed and sent to a Sentry server.
@@ -30,10 +32,10 @@ public class Raven {
     /**
      * Indicates whether the current thread is managed by raven or not.
      */
-    private static final ThreadLocal<Boolean> RAVEN_THREAD = new ThreadLocal<Boolean>() {
+    private static final ThreadLocal<AtomicInteger> RAVEN_THREAD = new ThreadLocal<AtomicInteger>() {
         @Override
-        protected Boolean initialValue() {
-            return false;
+        protected AtomicInteger initialValue() {
+            return new AtomicInteger();
         }
     };
     private static final Logger logger = LoggerFactory.getLogger(Raven.class);
@@ -51,7 +53,7 @@ public class Raven {
             if (isManagingThread())
                 logger.warn("Thread already managed by Raven");
         } finally {
-            RAVEN_THREAD.set(true);
+            RAVEN_THREAD.get().incrementAndGet();
         }
     }
 
@@ -69,7 +71,7 @@ public class Raven {
                 logger.warn("Thread not yet managed by Raven");
             }
         } finally {
-            RAVEN_THREAD.remove();
+            RAVEN_THREAD.get().decrementAndGet();
         }
     }
 
@@ -79,7 +81,7 @@ public class Raven {
      * @return {@code true} if the thread is managed by Raven, {@code false} otherwise.
      */
     public static boolean isManagingThread() {
-        return RAVEN_THREAD.get();
+        return RAVEN_THREAD.get().get() > 0;
     }
 
     /**
@@ -144,7 +146,7 @@ public class Raven {
      * @param builderHelper builder helper to remove.
      */
     public void removeBuilderHelper(EventBuilderHelper builderHelper) {
-        logger.info("Removes '{}' to the list of builder helpers.", builderHelper);
+        logger.info("Removing '{}' from the list of builder helpers.", builderHelper);
         builderHelpers.remove(builderHelper);
     }
 
@@ -162,11 +164,26 @@ public class Raven {
         return Collections.unmodifiableSet(builderHelpers);
     }
 
-    public Connection getConnection() {
-        return connection;
+    /**
+     * Closes the connection for the Raven instance.
+     */
+    public void closeConnection() {
+        try {
+            connection.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Couldn't close the Raven connection", e);
+        }
     }
 
     public void setConnection(Connection connection) {
         this.connection = connection;
+    }
+
+    @Override
+    public String toString() {
+        return "Raven{"
+                + "name=" + NAME
+                + ", connection=" + connection
+                + '}';
     }
 }
