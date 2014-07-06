@@ -9,12 +9,10 @@ import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.helper.EventBuilderHelper;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.io.IOException;
 
-import static mockit.Deencapsulation.getField;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -25,12 +23,6 @@ public class RavenTest {
     private Connection mockConnection = null;
     @Injectable
     private Event mockEvent = null;
-
-    @AfterMethod
-    public void tearDown() throws Exception {
-        ThreadLocal<AtomicInteger> ravenThread = getField(Raven.class, "RAVEN_THREAD");
-        ravenThread.remove();
-    }
 
     @Test
     public void testSendEvent() throws Exception {
@@ -125,50 +117,21 @@ public class RavenTest {
     }
 
     @Test
-    public void testThreadNotManagedByDefault() throws Exception {
-        assertThat(Raven.isManagingThread(), is(false));
+    public void testCloseConnectionSuccessful() throws Exception {
+        raven.closeConnection();
+
+        new Verifications() {{
+            mockConnection.close();
+        }};
     }
 
-    @Test
-    public void testStartManagingThreadWorks() throws Exception {
-        Raven.startManagingThread();
+    @Test(expectedExceptions = RuntimeException.class)
+    public void testCloseConnectionFailed() throws Exception {
+        new NonStrictExpectations() {{
+            mockConnection.close();
+            result = new IOException();
+        }};
 
-        assertThat(Raven.isManagingThread(), is(true));
-    }
-
-    @Test
-    public void testStartManagingAlreadyManagedThreadWorks() throws Exception {
-        Raven.startManagingThread();
-
-        Raven.startManagingThread();
-
-        assertThat(Raven.isManagingThread(), is(true));
-    }
-
-    @Test
-    public void testStopManagingThreadWorks() throws Exception {
-        Raven.startManagingThread();
-
-        Raven.stopManagingThread();
-
-        assertThat(Raven.isManagingThread(), is(false));
-    }
-
-    @Test
-    public void testStopManagingNonManagedThreadWorks() throws Exception {
-        Raven.stopManagingThread();
-
-        assertThat(Raven.isManagingThread(), is(false));
-    }
-
-    @Test
-    public void testThreadManagedTwiceNeedsToBeUnmanagedTwice() throws Exception {
-        Raven.startManagingThread();
-        Raven.startManagingThread();
-
-        Raven.stopManagingThread();
-        assertThat(Raven.isManagingThread(), is(true));
-        Raven.stopManagingThread();
-        assertThat(Raven.isManagingThread(), is(false));
+        raven.closeConnection();
     }
 }

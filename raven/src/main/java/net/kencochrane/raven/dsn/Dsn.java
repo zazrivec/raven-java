@@ -1,6 +1,5 @@
 package net.kencochrane.raven.dsn;
 
-import net.kencochrane.raven.Raven;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +17,7 @@ public class Dsn {
      * Name of the environment and system variables containing the DSN.
      */
     public static final String DSN_VARIABLE = "SENTRY_DSN";
-    private static final Logger logger = LoggerFactory.getLogger(Raven.class);
+    private static final Logger logger = LoggerFactory.getLogger(Dsn.class);
     private String secretKey;
     private String publicKey;
     private String projectId;
@@ -192,7 +191,6 @@ public class Dsn {
      * Validates internally the DSN, and check for mandatory elements.
      * <p>
      * Mandatory elements are the {@link #host}, {@link #publicKey}, {@link #secretKey} and {@link #projectId}.
-     * </p>
      */
     private void validate() {
         List<String> missingElements = new LinkedList<>();

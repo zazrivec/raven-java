@@ -31,11 +31,12 @@ public class ExceptionInterfaceBindingTest {
     public void setUp() throws Exception {
         new NonStrictExpectations() {{
             mockStackTraceInterfaceBinding.writeInterface(withInstanceOf(JsonGenerator.class), (StackTraceInterface) any);
-            result = new Delegate() {
-                public void writeInterface(JsonGenerator jsonGenerator, StackTraceInterface stackTraceInterface)
+            result = new Delegate<Void>() {
+                @SuppressWarnings("unused")
+                public void writeInterface(JsonGenerator generator, StackTraceInterface sentryInterface)
                         throws IOException {
-                    jsonGenerator.writeStartObject();
-                    jsonGenerator.writeEndObject();
+                    generator.writeStartObject();
+                    generator.writeEndObject();
                 }
             };
         }};
@@ -48,7 +49,8 @@ public class ExceptionInterfaceBindingTest {
         final Throwable throwable = new IllegalStateException(message);
         new NonStrictExpectations() {{
             mockExceptionInterface.getExceptions();
-            result = new Delegate<Void>() {
+            result = new Delegate<Deque<SentryException>>() {
+                @SuppressWarnings("unused")
                 public Deque<SentryException> getExceptions() {
                     return SentryException.extractExceptionQueue(throwable);
                 }
@@ -67,7 +69,8 @@ public class ExceptionInterfaceBindingTest {
         final Throwable throwable = new DefaultPackageException();
         new NonStrictExpectations() {{
             mockExceptionInterface.getExceptions();
-            result = new Delegate<Void>() {
+            result = new Delegate<Deque<SentryException>>() {
+                @SuppressWarnings("unused")
                 public Deque<SentryException> getExceptions() {
                     return SentryException.extractExceptionQueue(throwable);
                 }
@@ -88,7 +91,8 @@ public class ExceptionInterfaceBindingTest {
         final Throwable throwable2 = new IllegalStateException(message2, throwable1);
         new NonStrictExpectations() {{
             mockExceptionInterface.getExceptions();
-            result = new Delegate<Void>() {
+            result = new Delegate<Deque<SentryException>>() {
+                @SuppressWarnings("unused")
                 public Deque<SentryException> getExceptions() {
                     return SentryException.extractExceptionQueue(throwable2);
                 }
@@ -106,9 +110,8 @@ public class ExceptionInterfaceBindingTest {
  * Exception used to test exceptions defined in the default package.
  * <p>
  * Obviously we can't use an Exception which is really defined in the default package within those tests
- * (can't import it), so instead set the name of the class to remove the package name.<br />
+ * (can't import it), so instead set the name of the class to remove the package name.<br>
  * {@code Deencapsulation.setField(Object) DefaultPackageException.class, "name", "DefaultPackageClass")}
- * </p>
  */
 class DefaultPackageException extends Exception {
 }

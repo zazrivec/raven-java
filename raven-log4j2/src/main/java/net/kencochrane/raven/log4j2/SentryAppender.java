@@ -5,6 +5,7 @@ import net.kencochrane.raven.Raven;
 import net.kencochrane.raven.RavenFactory;
 import net.kencochrane.raven.dsn.Dsn;
 import net.kencochrane.raven.dsn.InvalidDsnException;
+import net.kencochrane.raven.environment.RavenEnvironment;
 import net.kencochrane.raven.event.Event;
 import net.kencochrane.raven.event.EventBuilder;
 import net.kencochrane.raven.event.interfaces.ExceptionInterface;
@@ -53,21 +54,18 @@ public class SentryAppender extends AbstractAppender {
      * DSN property of the appender.
      * <p>
      * Might be null in which case the DSN should be detected automatically.
-     * </p>
      */
     protected String dsn;
     /**
      * Name of the {@link RavenFactory} being used.
      * <p>
      * Might be null in which case the factory should be defined automatically.
-     * </p>
      */
     protected String ravenFactory;
     /**
      * Additional tags to be sent to sentry.
      * <p>
      * Might be empty in which case no tags are sent.
-     * </p>
      */
     protected Map<String, String> tags = Collections.emptyMap();
 
@@ -129,13 +127,13 @@ public class SentryAppender extends AbstractAppender {
      * @return log level used within raven.
      */
     protected static Event.Level formatLevel(Level level) {
-        if (level.isAtLeastAsSpecificAs(Level.FATAL))
+        if (level.isMoreSpecificThan(Level.FATAL))
             return Event.Level.FATAL;
-        else if (level.isAtLeastAsSpecificAs(Level.ERROR))
+        else if (level.isMoreSpecificThan(Level.ERROR))
             return Event.Level.ERROR;
-        else if (level.isAtLeastAsSpecificAs(Level.WARN))
+        else if (level.isMoreSpecificThan(Level.WARN))
             return Event.Level.WARNING;
-        else if (level.isAtLeastAsSpecificAs(Level.INFO))
+        else if (level.isMoreSpecificThan(Level.INFO))
             return Event.Level.INFO;
         else
             return Event.Level.DEBUG;
@@ -145,7 +143,6 @@ public class SentryAppender extends AbstractAppender {
      * Extracts message parameters into a List of Strings.
      * <p>
      * null parameters are kept as null.
-     * </p>
      *
      * @param parameters parameters provided to the logging system.
      * @return the parameters formatted as Strings in a List.
@@ -161,19 +158,18 @@ public class SentryAppender extends AbstractAppender {
      * {@inheritDoc}
      * <p>
      * The raven instance is set in this method instead of {@link #start()} in order to avoid substitute loggers
-     * being generated during the instantiation of {@link Raven}.<br />
-     * </p>
+     * being generated during the instantiation of {@link Raven}.<br>
      *
      * @param logEvent The LogEvent.
      */
     @Override
     public void append(LogEvent logEvent) {
         // Do not log the event if the current thread is managed by raven
-        if (Raven.isManagingThread())
+        if (RavenEnvironment.isManagingThread())
             return;
 
+        RavenEnvironment.startManagingThread();
         try {
-            Raven.startManagingThread();
             if (raven == null)
                 initRaven();
 
@@ -182,7 +178,7 @@ public class SentryAppender extends AbstractAppender {
         } catch (Exception e) {
             error("An exception occurred while creating a new event in Raven", logEvent, e);
         } finally {
-            Raven.stopManagingThread();
+            RavenEnvironment.stopManagingThread();
         }
     }
 
@@ -211,7 +207,7 @@ public class SentryAppender extends AbstractAppender {
     protected Event buildEvent(LogEvent event) {
         Message eventMessage = event.getMessage();
         EventBuilder eventBuilder = new EventBuilder()
-                .setTimestamp(new Date(event.getMillis()))
+                .setTimestamp(new Date(event.getTimeMillis()))
                 .setMessage(eventMessage.getFormattedMessage())
                 .setLogger(event.getLoggerName())
                 .setLevel(formatLevel(event.getLevel()))
@@ -222,8 +218,8 @@ public class SentryAppender extends AbstractAppender {
                     formatMessageParameters(eventMessage.getParameters())));
         }
 
-        if (event.getThrown() != null) {
-            Throwable throwable = event.getThrown();
+        Throwable throwable = event.getThrown();
+        if (throwable != null) {
             eventBuilder.addSentryInterface(new ExceptionInterface(throwable));
         } else if (event.getSource() != null) {
             StackTraceElement[] stackTrace = {event.getSource()};
@@ -274,8 +270,8 @@ public class SentryAppender extends AbstractAppender {
 
     @Override
     public void stop() {
+        RavenEnvironment.startManagingThread();
         try {
-            Raven.startManagingThread();
             if (!isStarted())
                 return;
             super.stop();
@@ -284,7 +280,7 @@ public class SentryAppender extends AbstractAppender {
         } catch (Exception e) {
             error("An exception occurred while closing the Raven connection", e);
         } finally {
-            Raven.stopManagingThread();
+            RavenEnvironment.stopManagingThread();
         }
     }
 }

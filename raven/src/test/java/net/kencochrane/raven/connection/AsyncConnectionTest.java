@@ -2,6 +2,7 @@ package net.kencochrane.raven.connection;
 
 import mockit.*;
 import net.kencochrane.raven.Raven;
+import net.kencochrane.raven.environment.RavenEnvironment;
 import net.kencochrane.raven.event.Event;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -65,8 +66,9 @@ public class AsyncConnectionTest {
         new NonStrictExpectations() {{
             mockRuntime.addShutdownHook((Thread) any);
             result = new Delegate<Void>() {
-                public void addShutdownHook(Thread thread) {
-                    thread.run();
+                @SuppressWarnings("unused")
+                public void addShutdownHook(Thread hook) {
+                    hook.run();
                 }
             };
         }};
@@ -74,9 +76,9 @@ public class AsyncConnectionTest {
         new AsyncConnection(mockConnection, mockExecutorService, true);
 
         new VerificationsInOrder() {{
-            Raven.startManagingThread();
+            RavenEnvironment.startManagingThread();
             mockConnection.close();
-            Raven.stopManagingThread();
+            RavenEnvironment.stopManagingThread();
         }};
     }
 
@@ -90,8 +92,9 @@ public class AsyncConnectionTest {
         new NonStrictExpectations() {{
             mockRuntime.addShutdownHook((Thread) any);
             result = new Delegate<Void>() {
-                public void addShutdownHook(Thread thread) {
-                    thread.run();
+                @SuppressWarnings("unused")
+                public void addShutdownHook(Thread hook) {
+                    hook.run();
                 }
             };
             mockConnection.close();
@@ -101,7 +104,7 @@ public class AsyncConnectionTest {
         new AsyncConnection(mockConnection, mockExecutorService, true);
 
         new Verifications() {{
-            Raven.stopManagingThread();
+            RavenEnvironment.stopManagingThread();
         }};
     }
 
@@ -131,9 +134,10 @@ public class AsyncConnectionTest {
     public void testQueuedEventExecuted(@Injectable final Event mockEvent) throws Exception {
         new NonStrictExpectations() {{
             mockExecutorService.execute((Runnable) any);
-            result = new Delegate() {
-                public void execute(Runnable runnable) {
-                    runnable.run();
+            result = new Delegate<Void>() {
+                @SuppressWarnings("unused")
+                public void execute(Runnable command) {
+                    command.run();
                 }
             };
         }};
