@@ -127,8 +127,6 @@
                                     <artifact>*:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/services/com.fasterxml.jackson.core.JsonFactory</exclude>
-                                        <exclude>META-INF/services/javax.servlet.ServletContainerInitializer</exclude>
-                                        <exclude>META-INF/services/net.kencochrane.raven.RavenFactory</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
