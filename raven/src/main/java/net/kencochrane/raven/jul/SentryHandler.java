@@ -89,7 +89,7 @@ public class SentryHandler extends Handler {
      * @return the parameters formatted as Strings in a List.
      */
     protected static List<String> formatMessageParameters(Object[] parameters) {
-        List<String> formattedParameters = new ArrayList<>(parameters.length);
+        List<String> formattedParameters = new ArrayList<String>(parameters.length);
         for (Object parameter : parameters)
             formattedParameters.add((parameter != null) ? parameter.toString() : null);
         return formattedParameters;

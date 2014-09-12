@@ -76,7 +76,7 @@ public class AbstractConnectionTest {
 
         abstractConnection.send(mockEvent);
 
-        long waitingTimeAfter = getField(abstractConnection, "waitingTime");
+        long waitingTimeAfter = (Long)getField(abstractConnection, "waitingTime");
         assertThat(waitingTimeAfter, is(AbstractConnection.DEFAULT_BASE_WAITING_TIME * 2));
         new Verifications() {{
             Thread.sleep(AbstractConnection.DEFAULT_BASE_WAITING_TIME);
@@ -93,7 +93,7 @@ public class AbstractConnectionTest {
 
         abstractConnection.send(mockEvent);
 
-        long waitingTimeAfter = getField(abstractConnection, "waitingTime");
+        long waitingTimeAfter = (Long)getField(abstractConnection, "waitingTime");
         assertThat(waitingTimeAfter, is(AbstractConnection.DEFAULT_MAX_WAITING_TIME));
         new Verifications() {{
             Thread.sleep(AbstractConnection.DEFAULT_MAX_WAITING_TIME);

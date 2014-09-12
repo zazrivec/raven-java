@@ -134,9 +134,9 @@ public class DefaultRavenFactory extends RavenFactory {
 
         BlockingDeque<Runnable> queue;
         if (dsn.getOptions().containsKey(QUEUE_SIZE_OPTION)) {
-            queue = new LinkedBlockingDeque<>(Integer.parseInt(dsn.getOptions().get(QUEUE_SIZE_OPTION)));
+            queue = new LinkedBlockingDeque<Runnable>(Integer.parseInt(dsn.getOptions().get(QUEUE_SIZE_OPTION)));
         } else {
-            queue = new LinkedBlockingDeque<>();
+            queue = new LinkedBlockingDeque<Runnable>();
         }
 
         ExecutorService executorService = new ThreadPoolExecutor(

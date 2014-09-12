@@ -9,6 +9,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Enumeration;
+import java.util.NoSuchElementException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -18,6 +20,20 @@ public class HttpInterfaceTest {
     private HttpServletRequest mockHttpServletRequest = null;
     @Injectable
     private Cookie mockCookie = null;
+
+    private static class EmptyEnumerator<T> implements Enumeration<T> {
+
+        EmptyEnumerator() {
+        }
+
+        public boolean hasMoreElements() {
+            return false;
+        }
+
+        public T nextElement() {
+            throw new NoSuchElementException("Enumerator");
+        }
+    }
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -55,9 +71,9 @@ public class HttpInterfaceTest {
             mockHttpServletRequest.getRemoteUser();
             result = "remoteUser";
             mockHttpServletRequest.getHeaderNames();
-            result = Collections.emptyEnumeration();
+            result = new EmptyEnumerator<java.lang.String>();
             mockHttpServletRequest.getHeaders(anyString);
-            result = Collections.emptyEnumeration();
+            result = new EmptyEnumerator<java.lang.String>();;
         }};
     }
 

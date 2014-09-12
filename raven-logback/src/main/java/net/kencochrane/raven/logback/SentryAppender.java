@@ -82,7 +82,7 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
      * @return the parameters formatted as Strings in a List.
      */
     protected static List<String> formatMessageParameters(Object[] parameters) {
-        List<String> arguments = new ArrayList<>(parameters.length);
+        List<String> arguments = new ArrayList<String>(parameters.length);
         for (Object argument : parameters) {
             arguments.add((argument != null) ? argument.toString() : null);
         }
@@ -201,8 +201,8 @@ public class SentryAppender extends AppenderBase<ILoggingEvent> {
 
     private Deque<SentryException> extractExceptionQueue(ILoggingEvent iLoggingEvent) {
         IThrowableProxy throwableProxy = iLoggingEvent.getThrowableProxy();
-        Deque<SentryException> exceptions = new ArrayDeque<>();
-        Set<IThrowableProxy> circularityDetector = new HashSet<>();
+        Deque<SentryException> exceptions = new ArrayDeque<SentryException>();
+        Set<IThrowableProxy> circularityDetector = new HashSet<IThrowableProxy>();
         StackTraceElement[] enclosingStackTrace = new StackTraceElement[0];
 
         //Stack the exceptions to send them in the reverse order
