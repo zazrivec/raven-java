@@ -226,6 +226,7 @@ public class DefaultRavenFactory extends RavenFactory {
                 "org.omg.",
                 "sun.",
                 "junit.",
+                "com.ibm.",
                 "com.intellij.rt.");
     }
 
